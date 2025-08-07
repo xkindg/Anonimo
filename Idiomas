@@ -1,396 +1,181 @@
-return {
-	en={
-		['welcome']='welcome to pshade ultimate',
-		['shader']='shaders',
-		['shaderlite']='shaders lite',
-		['shadercolorlite']='shaders color lite',
-		['shadercolor']='shaders color',
-		['weather']='weathers',
-		['season']='seasons',
-		['default']='default',
-		['morning']='morning',
-		['midday']='midday',
-		['afternoon']='afternoon',
-		['evening']='evening',
-		['night']='night',
-		['midnight']='midnight',
-		['morningl']='morning lite',
-		['middayl']='midday lite',
-		['afternoonl']='afternoon lite',
-		['eveningl']='evening lite',
-		['nightl']='night lite',
-		['midnightl']='midnight lite',
-		['blackc']='black color',
-		['whitec']='white color',
-		['greenc']='green color',
-		['redc']='red color',
-		['yellowc']='yellow color',
-		['pinkc']='pink color',
-		['grayc']='gray color',
-		['white']='white color',
-		['purple']='purple color',
-		['snow']='snow',
-		['rain']='rain',
-		['fog']='fog',
-		['sunny']='sunny',
-		['cloudy']='cloudy',
-		['storm']='storm',
-		['autumn']='autumn',
-		['spring']='spring',
-		['summer']='summer',
-		['winter']='winter',
-		['adjustment']='adjustment',
-		['graphics settings']='graphics settings',
-		['world adjust']='world adjust',
-		['time adjustment']='time adjustment',
-		['clouds adjustment']='clouds adjustment',
-		['atmosphere adjustment']='atmosphere adjustment',
-		['depth of field adjustment']='depth of field adjustment',
-		['sunrays adjustment']='sunrays adjustment',
-		['colorcorrection adjustment']='colorcorrection adjustment',
-		['blureffect adjustment']='blureffect adjustment',
-		['bloom adjustment']='bloom adjustment',
-		['effects']='effects',
-		['sunflare adjustment']='sunflare adjustment',
-		['blur motion adjustment']='blur motion adjustment',
-		['language']='language',
-		['background image theme']='background image theme'
-	},
-	es={
-		['welcome']='bienvenido a pshade ultimate',
-		['shader']='sombras',
-		['shaderlite']='sombras ligeras',
-		['shadercolorlite']='sombras de color ligeras',
-		['shadercolor']='sombras de color',
-		['weather']='clima',
-		['season']='estaciones',
-		['default']='predeterminado',
-		['morning']='mañana',
-		['midday']='mediodía',
-		['afternoon']='tarde',
-		['evening']='anochecer',
-		['night']='noche',
-		['midnight']='medianoche',
-		['morningl']='mañana ligera',
-		['middayl']='mediodía ligero',
-		['afternoonl']='tarde ligera',
-		['eveningl']='anochecer ligero',
-		['nightl']='noche ligera',
-		['midnightl']='medianoche ligera',
-		['blackc']='color negro',
-		['whitec']='color blanco',
-		['greenc']='color verde',
-		['redc']='color rojo',
-		['yellowc']='color amarillo',
-		['pinkc']='color rosa',
-		['grayc']='color gris',
-		['purple']='color púrpura',
-		['snow']='nieve',
-		['rain']='lluvia',
-		['fog']='niebla',
-		['sunny']='soleado',
-		['cloudy']='nublado',
-		['storm']='tormenta',
-		['autumn']='otoño',
-		['spring']='primavera',
-		['summer']='verano',
-		['winter']='invierno',
-		['adjustment']='ajuste',
-		['graphics settings']='configuración de gráficos',
-		['world adjust']='ajuste del mundo',
-		['time adjustment']='ajuste de tiempo',
-		['clouds adjustment']='ajuste de nubes',
-		['atmosphere adjustment']='ajuste de atmósfera',
-		['depth of field adjustment']='ajuste de profundidad de campo',
-		['sunrays adjustment']='ajuste de rayos de sol',
-		['colorcorrection adjustment']='ajuste de corrección de color',
-		['blureffect adjustment']='ajuste de efecto borroso',
-		['bloom adjustment']='ajuste de brillo',
-		['effects']='efectos',
-		['sunflare adjustment']='ajuste de destellos solares',
-		['blur motion adjustment']='ajuste de movimiento borroso',
-		['language']='idioma',
-		['background image theme']='tema de imagen de fondo'
-	},
-	id={
-		['welcome']='selamat datang di pshade ultimate',
-		['shader']='shader',
-		['shaderlite']='shader ringan',
-		['shadercolorlite']='shader warna ringan',
-		['shadercolor']='shader warna',
-		['weather']='cuaca',
-		['season']='musim',
-		['default']='bawaan',
-		['morning']='pagi',
-		['midday']='pagi menjelang siang',
-		['afternoon']='siang',
-		['evening']='sore',
-		['night']='malam',
-		['midnight']='tengah malam',
-		['morningl']='pagi ringan',
-		['middayl']='siang ringan',
-		['afternoonl']='sore ringan',
-		['eveningl']='petang ringan',
-		['nightl']='malam ringan',
-		['midnightl']='tengah malam ringan',
-		['blackc']='warna hitam',
-		['whitec']='warna putih',
-		['greenc']='warna hijau',
-		['redc']='warna merah',
-		['yellowc']='warna kuning',
-		['pinkc']='warna merah muda',
-		['grayc']='warna abu-abu',
-		['purple']='warna ungu',
-		['snow']='salju',
-		['rain']='hujan',
-		['fog']='kabut',
-		['sunny']='cerah',
-		['cloudy']='berawan',
-		['storm']='badai',
-		['autumn']='musim gugur',
-		['spring']='musim semi',
-		['summer']='musim panas',
-		['winter']='musim dingin',
-		['adjustment']='penyesuaian',
-		['graphics settings']='pengaturan grafik',
-		['world adjust']='penyesuaian dunia',
-		['time adjustment']='penyesuaian waktu',
-		['clouds adjustment']='penyesuaian awan',
-		['atmosphere adjustment']='penyesuaian atmosfer',
-		['depth of field adjustment']='penyesuaian kedalaman bidang',
-		['sunrays adjustment']='penyesuaian sinar matahari',
-		['colorcorrection adjustment']='penyesuaian koreksi warna',
-		['blureffect adjustment']='penyesuaian efek blur',
-		['bloom adjustment']='penyesuaian bloom',
-		['effects']='efek',
-		['sunflare adjustment']='penyesuaian sinar matahari',
-		['blur motion adjustment']='penyesuaian blur gerakan',
-		['language']='bahasa',
-		['background image theme']='tema gambar latar'
-	},
-	ar={
-		['welcome']='مرحبًا بك في Pshade Ultimate',
-		['shader']='الظل',
-		['shaderlite']='ظل خفيف',
-		['shadercolorlite']='ظل لون خفيف',
-		['shadercolor']='ظل اللون',
-		['weather']='الطقس',
-		['season']='المواسم',
-		['default']='افتراضي',
-		['morning']='صباح',
-		['midday']='ظهر',
-		['afternoon']='عصر',
-		['evening']='مساء',
-		['night']='ليل',
-		['midnight']='منتصف الليل',
-		['morningl']='صباح خفيف',
-		['middayl']='ظهر خفيف',
-		['afternoonl']='عصر خفيف',
-		['eveningl']='مساء خفيف',
-		['nightl']='ليل خفيف',
-		['midnightl']='منتصف الليل خفيف',
-		['blackc']='اللون الأسود',
-		['whitec']='اللون الأبيض',
-		['greenc']='اللون الأخضر',
-		['redc']='اللون الأحمر',
-		['yellowc']='اللون الأصفر',
-		['pinkc']='اللون الوردي',
-		['grayc']='اللون الرمادي',
-		['purple']='اللون الأرجواني',
-		['snow']='ثلج',
-		['rain']='مطر',
-		['fog']='ضباب',
-		['sunny']='مشمس',
-		['cloudy']='غائم',
-		['storm']='عاصفة',
-		['autumn']='الخريف',
-		['spring']='الربيع',
-		['summer']='الصيف',
-		['winter']='الشتاء',
-		['adjustment']='التعديل',
-		['graphics settings']='إعدادات الرسومات',
-		['world adjust']='تعديل العالم',
-		['time adjustment']='تعديل الوقت',
-		['clouds adjustment']='تعديل السحب',
-		['atmosphere adjustment']='تعديل الغلاف الجوي',
-		['depth of field adjustment']='تعديل عمق المجال',
-		['sunrays adjustment']='تعديل أشعة الشمس',
-		['colorcorrection adjustment']='تعديل تصحيح الألوان',
-		['blureffect adjustment']='تعديل تأثير الضبابية',
-		['bloom adjustment']='تعديل الإضاءة',
-		['effects']='التأثيرات',
-		['sunflare adjustment']='تعديل توهج الشمس',
-		['blur motion adjustment']='تعديل تشويش الحركة',
-		['language']='اللغة',
-		['background image theme']='سمة صورة الخلفية'
-	},
-	ms={
-		['welcome']='selamat datang ke Pshade Ultimate',
-		['shader']='bayang-bayang',
-		['shaderlite']='bayang-bayang ringan',
-		['shadercolorlite']='bayang warna ringan',
-		['shadercolor']='bayang warna',
-		['weather']='cuaca',
-		['season']='musim',
-		['default']='lalai',
-		['morning']='pagi',
-		['midday']='tengah hari',
-		['afternoon']='petang',
-		['evening']='senja',
-		['night']='malam',
-		['midnight']='tengah malam',
-		['morningl']='pagi ringan',
-		['middayl']='tengah hari ringan',
-		['afternoonl']='petang ringan',
-		['eveningl']='senja ringan',
-		['nightl']='malam ringan',
-		['midnightl']='tengah malam ringan',
-		['blackc']='warna hitam',
-		['whitec']='warna putih',
-		['greenc']='warna hijau',
-		['redc']='warna merah',
-		['yellowc']='warna kuning',
-		['pinkc']='warna merah jambu',
-		['grayc']='warna kelabu',
-		['purple']='warna ungu',
-		['snow']='salji',
-		['rain']='hujan',
-		['fog']='kabus',
-		['sunny']='cerah',
-		['cloudy']='berawan',
-		['storm']='ribut',
-		['autumn']='musim luruh',
-		['spring']='musim bunga',
-		['summer']='musim panas',
-		['winter']='musim sejuk',
-		['adjustment']='pelarasan',
-		['graphics settings']='tetapan grafik',
-		['world adjust']='pelarasan dunia',
-		['time adjustment']='pelarasan masa',
-		['clouds adjustment']='pelarasan awan',
-		['atmosphere adjustment']='pelarasan atmosfera',
-		['depth of field adjustment']='pelarasan kedalaman medan',
-		['sunrays adjustment']='pelarasan sinar matahari',
-		['colorcorrection adjustment']='pelarasan pembetulan warna',
-		['blureffect adjustment']='pelarasan kesan kabur',
-		['bloom adjustment']='pelarasan pencahayaan',
-		['effects']='kesan',
-		['sunflare adjustment']='pelarasan pancaran matahari',
-		['blur motion adjustment']='pelarasan pergerakan kabur',
-		['language']='bahasa',
-		['background image theme']='tema imej latar'
-	},
-	ru={
-		['welcome']='добро пожаловать в Pshade Ultimate',
-		['shader']='шейдеры',
-		['shaderlite']='облегчённые шейдеры',
-		['shadercolorlite']='облегчённые цветные шейдеры',
-		['shadercolor']='цветные шейдеры',
-		['weather']='погода',
-		['season']='сезоны',
-		['default']='по умолчанию',
-		['morning']='утро',
-		['midday']='полдень',
-		['afternoon']='день',
-		['evening']='вечер',
-		['night']='ночь',
-		['midnight']='полночь',
-		['morningl']='легкое утро',
-		['middayl']='легкий полдень',
-		['afternoonl']='легкий день',
-		['eveningl']='легкий вечер',
-		['nightl']='легкая ночь',
-		['midnightl']='легкая полночь',
-		['blackc']='чёрный цвет',
-		['whitec']='белый цвет',
-		['greenc']='зелёный цвет',
-		['redc']='красный цвет',
-		['yellowc']='жёлтый цвет',
-		['pinkc']='розовый цвет',
-		['grayc']='серый цвет',
-		['purple']='фиолетовый цвет',
-		['snow']='снег',
-		['rain']='дождь',
-		['fog']='туман',
-		['sunny']='солнечно',
-		['cloudy']='облачно',
-		['storm']='шторм',
-		['autumn']='осень',
-		['spring']='весна',
-		['summer']='лето',
-		['winter']='зима',
-		['adjustment']='настройка',
-		['graphics settings']='настройки графики',
-		['world adjust']='настройка мира',
-		['time adjustment']='настройка времени',
-		['clouds adjustment']='настройка облаков',
-		['atmosphere adjustment']='настройка атмосферы',
-		['depth of field adjustment']='настройка глубины резкости',
-		['sunrays adjustment']='настройка солнечных лучей',
-		['colorcorrection adjustment']='настройка цветокоррекции',
-		['blureffect adjustment']='настройка эффекта размытия',
-		['bloom adjustment']='настройка свечения',
-		['effects']='эффекты',
-		['sunflare adjustment']='настройка солнечного блика',
-		['blur motion adjustment']='настройка размытия в движении',
-		['language']='язык',
-		['background image theme']='тема фонового изображения'
-	},
-	th={
-		['welcome']='ยินดีต้อนรับสู่ Pshade Ultimate',
-		['shader']='เชดเดอร์',
-		['shaderlite']='เชดเดอร์แบบเบา',
-		['shadercolorlite']='เชดเดอร์สีแบบเบา',
-		['shadercolor']='เชดเดอร์สี',
-		['weather']='สภาพอากาศ',
-		['season']='ฤดูกาล',
-		['default']='ค่าเริ่มต้น',
-		['morning']='เช้า',
-		['midday']='กลางวัน',
-		['afternoon']='บ่าย',
-		['evening']='เย็น',
-		['night']='กลางคืน',
-		['midnight']='เที่ยงคืน',
-		['morningl']='เช้าแบบเบา',
-		['middayl']='กลางวันแบบเบา',
-		['afternoonl']='บ่ายแบบเบา',
-		['eveningl']='เย็นแบบเบา',
-		['nightl']='กลางคืนแบบเบา',
-		['midnightl']='เที่ยงคืนแบบเบา',
-		['blackc']='สีดำ',
-		['whitec']='สีขาว',
-		['greenc']='สีเขียว',
-		['redc']='สีแดง',
-		['yellowc']='สีเหลือง',
-		['pinkc']='สีชมพู',
-		['grayc']='สีเทา',
-		['purple']='สีม่วง',
-		['snow']='หิมะ',
-		['rain']='ฝน',
-		['fog']='หมอก',
-		['sunny']='แดดจ้า',
-		['cloudy']='มีเมฆ',
-		['storm']='พายุ',
-		['autumn']='ฤดูใบไม้ร่วง',
-		['spring']='ฤดูใบไม้ผลิ',
-		['summer']='ฤดูร้อน',
-		['winter']='ฤดูหนาว',
-		['adjustment']='การปรับ',
-		['graphics settings']='การตั้งค่ากราฟิก',
-		['world adjust']='ปรับโลก',
-		['time adjustment']='ปรับเวลา',
-		['clouds adjustment']='ปรับเมฆ',
-		['atmosphere adjustment']='ปรับบรรยากาศ',
-		['depth of field adjustment']='ปรับความลึกของภาพ',
-		['sunrays adjustment']='ปรับแสงแดด',
-		['colorcorrection adjustment']='ปรับการแก้ไขสี',
-		['blureffect adjustment']='ปรับเอฟเฟกต์เบลอ',
-		['bloom adjustment']='ปรับความสว่าง',
-		['effects']='เอฟเฟกต์',
-		['sunflare adjustment']='ปรับแสงแฟลร์',
-		['blur motion adjustment']='ปรับเบลอการเคลื่อนไหว',
-		['language']='ภาษา',
-		['background image theme']='ธีมภาพพื้นหลัง'
-	}
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
-}
+local localPlayer = Players.LocalPlayer
+
+-- ESTADO GLOBAL DEL ESCUDO
+local SHIELD_ACTIVE = false
+
+-- Almacén para el estado original del personaje
+local originalDescription = nil
+
+-- ========= CREACIÓN DE LA INTERFAZ GRÁFICA (GUI) =========
+-- (El código de la GUI es el mismo, no es necesario cambiarlo)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "EscudoAvatarGUIv6"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 220, 0, 80)
+mainFrame.Position = UDim2.new(0.5, -110, 0.2, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+mainFrame.BorderColor3 = Color3.fromRGB(120, 120, 120)
+mainFrame.Parent = screenGui
+
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+titleBar.Parent = mainFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, 0, 1, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "Escudo de Avatar v6"
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 16
+titleLabel.Parent = titleBar
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Size = UDim2.new(1, -20, 1, -40)
+toggleButton.Position = UDim2.new(0, 10, 0, 35)
+toggleButton.BackgroundColor3 = Color3.fromRGB(224, 73, 73)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "Activar Escudo"
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Parent = mainFrame
+
+-- Lógica para arrastrar la ventana
+local dragging = false
+local dragInput, dragStart, startPos
+titleBar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging, dragStart, startPos = true, input.Position, mainFrame.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end) end end)
+titleBar.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
+UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then local delta = input.Position - dragStart; mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
+
+-- ========= LÓGICA DE PROTECCIÓN MULTI-CAPA =========
+
+-- Guardamos la descripción original cuando el personaje aparece
+localPlayer.CharacterAdded:Connect(function(character)
+    task.wait(1) -- Damos tiempo a que todo cargue
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        originalDescription = humanoid:GetAppliedDescription()
+    end
+end)
+if localPlayer.Character then
+    local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        originalDescription = humanoid:GetAppliedDescription()
+    end
+end
+
+-- Función para restaurar todo a la normalidad
+local function restaurarNormalidad()
+    local character = localPlayer.Character
+    if not character then return end
+    
+    -- Restaurar Body Colors
+    local trampa = character:FindFirstChild("Body Colors")
+    if trampa and trampa:IsA("StringValue") then trampa:Destroy() end
+    local realBodyColors = character:FindFirstChild("RealBodyColors_Protected")
+    if realBodyColors then realBodyColors.Name = "Body Colors" end
+    
+    -- Restaurar HumanoidDescription
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid and originalDescription then
+        humanoid:ApplyDescription(originalDescription)
+    end
+    print("Sistemas restaurados a la normalidad.")
+end
+
+--- CAPA 1: TRAMPA DE BODY COLORS (DOBLE BUCLE) ---
+local function iniciarBucleBodyColors(desync_wait)
+    task.spawn(function()
+        task.wait(desync_wait) -- Desincronización inicial
+        while SHIELD_ACTIVE do
+            local character = localPlayer.Character
+            if character and character.Parent then
+                local realBodyColors = character:FindFirstChild("Body Colors")
+                if realBodyColors and realBodyColors:IsA("BodyColors") then
+                    realBodyColors.Name = "RealBodyColors_Protected"
+                end
+                if not character:FindFirstChild("Body Colors") then
+                    local fake = Instance.new("StringValue")
+                    fake.Name = "Body Colors"
+                    fake.Parent = character
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
+end
+
+--- CAPA 2: ANULACIÓN DE HUMANOIDDESCRIPTION ---
+local function iniciarBucleDescripcion()
+    task.spawn(function()
+        while SHIELD_ACTIVE do
+            local character = localPlayer.Character
+            if character and character.Parent then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    -- Reemplazamos la propiedad constantemente
+                    humanoid.HumanoidDescription = Instance.new("HumanoidDescription")
+                end
+            end
+            task.wait(0.25)
+        end
+    end)
+end
+
+--- CAPA 3: GENERADOR DE RUIDO ---
+local function iniciarBucleDeRuido()
+    task.spawn(function()
+        while SHIELD_ACTIVE do
+            local character = localPlayer.Character
+            if character and character.Parent then
+                local fakeAccessory = Instance.new("Accessory")
+                fakeAccessory.Parent = character
+                fakeAccessory:Destroy()
+            end
+            task.wait() -- Se ejecuta en cada frame para máximo ruido
+        end
+    end)
+end
+
+-- El botón que controla todo
+toggleButton.MouseButton1Click:Connect(function()
+    SHIELD_ACTIVE = not SHIELD_ACTIVE
+    
+    if SHIELD_ACTIVE then
+        toggleButton.Text = "Escudo Activado"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(73, 224, 84)
+        
+        -- Iniciar todos los bucles de protección
+        iniciarBucleBodyColors(0)    -- Bucle 1A
+        iniciarBucleBodyColors(0.05) -- Bucle 1B (desincronizado)
+        iniciarBucleDescripcion()    -- Bucle 2
+        iniciarBucleDeRuido()        -- Bucle 3
+        
+        print("🛡️ Escudo Multi-Capa ACTIVADO. 4 bucles de protección en ejecución.")
+    else
+        toggleButton.Text = "Activar Escudo"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(224, 73, 73)
+        restaurarNormalidad()
+        print("Escudo DESACTIVADO. Todos los bucles detenidos.")
+    end
+end)
+
+screenGui.Destroying:Connect(function()
+    SHIELD_ACTIVE = false
+    restaurarNormalidad()
+end)
+
+print("✅ Escudo Interactivo v6 (Multi-Capa) cargado y listo.")
