@@ -1,5 +1,5 @@
 -- =========================================================
--- LIBRERIA "xSOLITOx HUB" - MODIFICADA
+-- LIBRERIA "xSOLITOx HUB" - VERSIÓN MEJORADA
 -- =========================================================
 
 -- Destruye instancias previas de la interfaz si existen
@@ -41,6 +41,37 @@ function AplicarDegradadoBrillante(Parent)
 	gradient.Parent = Parent
     return gradient
 end
+
+---
+-- MEJORA: Nueva función que aplica el borde con efecto de "brillo".
+-- Copiado de SCRIPT V30.txt para máxima saturación y efecto visual.
+---
+function AplicarBordeDegradadoBrillante(Parent)
+    for _, child in ipairs(Parent:GetChildren()) do
+        if child:IsA("UIStroke") then
+            child:Destroy()
+        end
+    end
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    Stroke.Thickness = 2 -- Grosor delicado
+    Stroke.LineJoinMode = Enum.LineJoinMode.Round
+    Stroke.Color = colorInicioDegradado 
+	Stroke.Transparency = 0
+
+    -- El degradado de transparencia que crea el efecto de "brillo"
+    local TransparencyGradient = Instance.new("UIGradient")
+    TransparencyGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.2), 
+        NumberSequenceKeypoint.new(0.5, 0.8),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    TransparencyGradient.Rotation = 120
+    TransparencyGradient.Parent = Stroke
+    Stroke.Parent = Parent
+end
+
 
 ---
 -- Crea esquinas redondeadas para un objeto de la interfaz.
@@ -104,7 +135,7 @@ end;
 -- =========================================================
 
 local ScreenGui = Instance.new("ScreenGui");
-ScreenGui.Parent = game.CoreGui;
+-- MEJORA: Se aplicará el parent más adelante con la técnica de Rayfield
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
 
 local OutlineButton = Instance.new("Frame");
@@ -144,8 +175,9 @@ end);
 
 local NotificationFrame = Instance.new("ScreenGui");
 NotificationFrame.Name = "NotificationFrame";
-NotificationFrame.Parent = game.CoreGui;
+-- MEJORA: Se aplicará el parent más adelante con la técnica de Rayfield
 NotificationFrame.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+NotificationFrame.DisplayOrder = 2147483647; -- Máxima prioridad
 
 local NotificationList = {};
 
@@ -248,9 +280,9 @@ end;
 --
 function Update:StartLoad()
 	local Loader = Instance.new("ScreenGui");
-	Loader.Parent = game.CoreGui;
+	-- MEJORA: Se aplicará el parent más adelante
 	Loader.ZIndexBehavior = Enum.ZIndexBehavior.Global;
-	Loader.DisplayOrder = 1000;
+	Loader.DisplayOrder = 2147483647;
 
 	local LoaderFrame = Instance.new("Frame");
 	LoaderFrame.Name = "LoaderFrame";
@@ -312,7 +344,6 @@ function Update:StartLoad()
 	LoadingBar.Parent = LoadingBarBackground;
 	LoadingBar.Size = UDim2.new(0, 0, 1, 0);
 	LoadingBar.ZIndex = 3;
-	-- Aplicar el nuevo degradado a la barra de carga
 	AplicarDegradadoBrillante(LoadingBar);
 
 	CreateRounded(LoadingBarBackground, 20);
@@ -354,6 +385,13 @@ function Update:StartLoad()
 			wait(0.5);
 		end;
 	end);
+    
+    -- MEJORA: Mover el loader al CoreGui o gethui para máxima visibilidad
+    if gethui then
+        Loader.Parent = gethui()
+    else
+        Loader.Parent = game:GetService("CoreGui")
+    end
 end;
 
 -- =========================================================
@@ -437,9 +475,11 @@ function Update:Window(Config)
 
 	local MainUI = Instance.new("ScreenGui");
 	MainUI.Name = "xSOLITOx HUB";
-	MainUI.Parent = game.CoreGui;
-	MainUI.DisplayOrder = 999;
-	
+    -- MEJORA: Parent se define al final con la técnica Rayfield
+	MainUI.DisplayOrder = 2147483647; -- Máxima prioridad
+    MainUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
+
+
 	local OutlineMain = Instance.new("Frame");
 	OutlineMain.Name = "OutlineMain";
 	OutlineMain.Parent = MainUI;
@@ -536,9 +576,9 @@ function Update:Window(Config)
 	CreateRounded(CloseButton, 3);
 	CloseButton.MouseButton1Click:connect(function()
 		local hub = game.CoreGui:FindFirstChild("xSOLITOx HUB")
-		if hub then
-			hub.Enabled = not hub.Enabled;
-		end
+        if hub then
+		    hub.Enabled = not hub.Enabled;
+        end
 	end);
 
 	local ResizeButton = Instance.new("ImageButton");
@@ -554,7 +594,6 @@ function Update:Window(Config)
 	ResizeButton.ImageColor3 = Color3.fromRGB(245, 245, 245);
 	CreateRounded(ResizeButton, 3);
 
-	-- Settings Menu
 	local BackgroundSettings = Instance.new("Frame");
 	BackgroundSettings.Name = "BackgroundSettings";
 	BackgroundSettings.Parent = OutlineMain;
@@ -620,7 +659,7 @@ function Update:Window(Config)
 	TitleSettings.Size = UDim2.new(1, 0, 0, 20);
 	TitleSettings.Font = Enum.Font.GothamBold;
 	TitleSettings.AnchorPoint = Vector2.new(0, 0);
-	TitleSettings.Text = "Library Settings";
+	TitleSettings.Text = "Preferencias del usuario"; -- MEJORA: Nombre cambiado
 	TitleSettings.TextSize = 20;
 	TitleSettings.TextColor3 = Color3.fromRGB(245, 245, 245);
 	TitleSettings.TextXAlignment = Enum.TextXAlignment.Left;
@@ -694,24 +733,32 @@ function Update:Window(Config)
 		Checkbox.ImageTransparency = 1;
 		Checkbox.ImageColor3 = Color3.fromRGB(245, 245, 245);
 		CreateRounded(Checkbox, 5);
-		
+        
+        -- MEJORA: Marco para el degradado para que no se superponga al ícono
+        local GradientFrame = Instance.new("Frame")
+        GradientFrame.Parent = Checkbox
+        GradientFrame.Size = UDim2.new(1, 0, 1, 0)
+        GradientFrame.BackgroundTransparency = 1
+        GradientFrame.ZIndex = Checkbox.ZIndex - 1
+        CreateRounded(GradientFrame, 5)
+
 		Checkbox.MouseButton1Click:Connect(function()
 			checked = not checked;
-			local grad = Checkbox:FindFirstChildOfClass("UIGradient")
+			local grad = GradientFrame:FindFirstChildOfClass("UIGradient")
 			if checked then
 				Checkbox.ImageTransparency = 0;
-				AplicarDegradadoBrillante(Checkbox)
+                AplicarDegradadoBrillante(GradientFrame)
 			else
 				Checkbox.ImageTransparency = 1;
 				Checkbox.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
-				if grad then grad:Destroy() end
+                if grad then grad:Destroy() end
 			end;
 			pcall(callback, checked);
 		end);
 		
 		if checked then
 			Checkbox.ImageTransparency = 0;
-			AplicarDegradadoBrillante(Checkbox)
+            AplicarDegradadoBrillante(GradientFrame)
 		else
 			Checkbox.ImageTransparency = 1;
 			Checkbox.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
@@ -740,7 +787,7 @@ function Update:Window(Config)
 		Button.TextColor3 = Color3.fromRGB(255, 255, 255);
 		Button.TextSize = 15;
 		Button.AutoButtonColor = false;
-		AplicarDegradadoBrillante(Button)
+        AplicarDegradadoBrillante(Button)
 
 		Button.MouseButton1Click:Connect(function()
 			callback();
@@ -832,9 +879,9 @@ function Update:Window(Config)
 	UserInputService.InputBegan:Connect(function(input)
 		if input.KeyCode == Enum.KeyCode.Insert then
 			local hub = game.CoreGui:FindFirstChild("xSOLITOx HUB")
-			if hub then
-				hub.Enabled = not hub.Enabled;
-			end
+            if hub then
+			    hub.Enabled = not hub.Enabled;
+            end
 		end;
 	end);
 
@@ -885,7 +932,7 @@ function Update:Window(Config)
 		SelectedTab.Size = UDim2.new(0, 3, 0, 0);
 		SelectedTab.Position = UDim2.new(0, 0, 0.5, 0);
 		SelectedTab.AnchorPoint = Vector2.new(0, 0.5);
-		AplicarDegradadoBrillante(SelectedTab)
+        AplicarDegradadoBrillante(SelectedTab)
 
 		UICorner.CornerRadius = UDim.new(0, 100);
 		UICorner.Parent = SelectedTab;
@@ -1218,16 +1265,16 @@ function Update:Window(Config)
 
 			ToggleImage.MouseButton1Click:Connect(function()
 				toggled = not toggled;
-				local grad = ToggleImage:FindFirstChildOfClass("UIGradient")
+                local grad = ToggleImage:FindFirstChildOfClass("UIGradient")
 				if toggled then
-					Circle:TweenPosition(UDim2.new(0, 17, 0.5, 0), "Out", "Sine", 0.2, true);
+					Circle:TweenPosition(UDim2.new(0, 18, 0.5, 0), "Out", "Sine", 0.2, true); -- MEJORA: Posición corregida
 					(TweenService:Create(ToggleImage, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 						BackgroundTransparency = 0
 					})):Play();
-					AplicarDegradadoBrillante(ToggleImage)
+                    AplicarDegradadoBrillante(ToggleImage)
 				else
-					if grad then grad:Destroy() end
-					Circle:TweenPosition(UDim2.new(0, 4, 0.5, 0), "Out", "Sine", 0.2, true);
+                    if grad then grad:Destroy() end
+					Circle:TweenPosition(UDim2.new(0, 3, 0.5, 0), "Out", "Sine", 0.2, true);
 					(TweenService:Create(ToggleImage, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 						BackgroundColor3 = Color3.fromRGB(200, 200, 200),
 						BackgroundTransparency = 0.8
@@ -1235,14 +1282,12 @@ function Update:Window(Config)
 				end;
 				pcall(callback, toggled);
 			end);
-
+			
 			if config == true then
 				toggled = true;
-				Circle:TweenPosition(UDim2.new(0, 17, 0.5, 0), "Out", "Sine", 0.4, true);
-				(TweenService:Create(ToggleImage, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					BackgroundTransparency = 0
-				})):Play();
-				AplicarDegradadoBrillante(ToggleImage)
+				Circle.Position = UDim2.new(0, 18, 0.5, 0) -- MEJORA: Posición corregida
+				ToggleImage.BackgroundTransparency = 0
+                AplicarDegradadoBrillante(ToggleImage)
 				pcall(callback, toggled);
 			end;
 		end;
@@ -1385,7 +1430,7 @@ function Update:Window(Config)
 				SelectedItems.Position = UDim2.new(0, -8, 0.5, 0);
 				SelectedItems.AnchorPoint = Vector2.new(0, 0.5);
 				SelectedItems.ZIndex = 4;
-				AplicarDegradadoBrillante(SelectedItems)
+                AplicarDegradadoBrillante(SelectedItems)
 
 				CRNRitems.Parent = SelectedItems;
 				CRNRitems.CornerRadius = UDim.new(0, 999);
@@ -1490,7 +1535,7 @@ function Update:Window(Config)
 				SelectedItems.Position = UDim2.new(0, -8, 0.5, 0);
 				SelectedItems.AnchorPoint = Vector2.new(0, 0.5);
 				SelectedItems.ZIndex = 4;
-				AplicarDegradadoBrillante(SelectedItems)
+                AplicarDegradadoBrillante(SelectedItems)
 				CRNRitems.Parent = SelectedItems;
 				CRNRitems.CornerRadius = UDim.new(0, 999);
 				Item.MouseButton1Click:Connect(function()
@@ -1530,6 +1575,7 @@ function Update:Window(Config)
 			return dropfunc;
 		end;
 
+        local isAnySliderDragging = false -- MEJORA: Variable global para sliders
 		function main:Slider(text, min, max, set, callback)
 			local Slider = Instance.new("Frame");
 			local slidercorner = Instance.new("UICorner");
@@ -1599,7 +1645,7 @@ function Update:Window(Config)
 			bar.Name = "bar";
 			bar.Parent = sliderr;
 			bar.BackgroundColor3 = Color3.fromRGB(200, 200, 200);
-			bar.Size = UDim2.new(0, 100, 0, 4);
+			bar.Size = UDim2.new(0, 100, 0, 8); -- MEJORA: Slider más grueso
 			bar.Position = UDim2.new(1, -10, 0.5, 0);
 			bar.BackgroundTransparency = 0.8;
 			bar.AnchorPoint = Vector2.new(1, 0.5);
@@ -1607,9 +1653,9 @@ function Update:Window(Config)
 			bar1.Name = "bar1";
 			bar1.Parent = bar;
 			bar1.BackgroundTransparency = 0;
-			bar1.Size = UDim2.new(set / max, 0, 0, 4);
-			AplicarDegradadoBrillante(bar1)
-			
+			bar1.Size = UDim2.new(set / max, 0, 1, 0); -- MEJORA: Altura relativa
+            AplicarDegradadoBrillante(bar1)
+
 			bar1corner.CornerRadius = UDim.new(0, 5);
 			bar1corner.Name = "bar1corner";
 			bar1corner.Parent = bar1;
@@ -1620,50 +1666,76 @@ function Update:Window(Config)
 			circlebar.Name = "circlebar";
 			circlebar.Parent = bar1;
 			circlebar.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			circlebar.Position = UDim2.new(1, 0, 0, -5);
-			circlebar.AnchorPoint = Vector2.new(0.5, 0);
-			circlebar.Size = UDim2.new(0, 13, 0, 13);
+			circlebar.Position = UDim2.new(1, 0, 0.5, 0); -- MEJORA: Centrado
+			circlebar.AnchorPoint = Vector2.new(0.5, 0.5);
+			circlebar.Size = UDim2.new(0, 16, 0, 16); -- MEJORA: Círculo más grande
 			UICorner.CornerRadius = UDim.new(0, 100);
 			UICorner.Parent = circlebar;
+
 			valuecorner.CornerRadius = UDim.new(0, 2);
 			valuecorner.Name = "valuecorner";
 			valuecorner.Parent = slidervalue;
 
-			local mouse = game.Players.LocalPlayer:GetMouse();
-			local uis = game:GetService("UserInputService");
 			if Value == nil then
 				Value = set;
 				pcall(function()
 					callback(Value);
 				end);
 			end;
-			local Dragging = false;
-			circlebar.InputBegan:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					Dragging = true;
-				end;
-			end);
-			bar.InputBegan:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					Dragging = true;
-				end;
-			end);
-			UserInputService.InputEnded:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					Dragging = false;
-				end;
-			end);
-			UserInputService.InputChanged:Connect(function(Input)
-				if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-					Value = math.floor((tonumber(max) - tonumber(min)) / 100 * bar1.AbsoluteSize.X + tonumber(min)) or 0;
-					pcall(function()
-						callback(Value);
-					end);
-					ValueText.Text = Value;
-					bar1.Size = UDim2.new(0, math.clamp(Input.Position.X - bar1.AbsolutePosition.X, 0, 100), 0, 4);
-					circlebar.Position = UDim2.new(0, math.clamp(Input.Position.X - bar1.AbsolutePosition.X - 5, 0, 100), 0, -5);
-				end;
-			end);
+			
+            local Dragging = false;
+            local mouseConnection = nil
+
+            local function UpdateSlider(Input)
+                local value = math.floor((tonumber(max) - tonumber(min)) / 100 * bar1.AbsoluteSize.X + tonumber(min)) or 0;
+                
+                local posX = math.clamp(Input.Position.X, bar.AbsolutePosition.X, bar.AbsolutePosition.X + bar.AbsoluteSize.X)
+                local percent = (posX - bar.AbsolutePosition.X) / bar.AbsoluteSize.X
+
+                local newValue = min + (max - min) * percent
+                newValue = math.floor(newValue / set + 0.5) * set
+                
+                pcall(function()
+                    callback(newValue);
+                end);
+                ValueText.Text = newValue;
+                
+                -- MEJORA: Suavizado con Tween
+                TweenService:Create(bar1, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(percent, 0, 1, 0)}):Play()
+            end
+            
+            local function StartDrag(Input)
+                if Input.UserInputType ~= Enum.UserInputType.MouseButton1 and Input.UserInputType ~= Enum.UserInputType.Touch then return end
+                if isAnySliderDragging then return end -- MEJORA: Chequeo de slider global
+                
+                Dragging = true
+                isAnySliderDragging = true
+
+                -- MEJORA: Conexión global para arrastrar desde cualquier lado
+                mouseConnection = UserInputService.InputChanged:Connect(function(input)
+                    if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                        UpdateSlider(input)
+                    end
+                end)
+                UpdateSlider(Input)
+            end
+            
+            local function EndDrag(Input)
+                if Input.UserInputType ~= Enum.UserInputType.MouseButton1 and Input.UserInputType ~= Enum.UserInputType.Touch then return end
+                if not Dragging then return end
+                
+                Dragging = false
+                isAnySliderDragging = false
+                
+                if mouseConnection then
+                    mouseConnection:Disconnect()
+                    mouseConnection = nil
+                end
+            end
+            
+            circlebar.InputBegan:Connect(StartDrag)
+            bar.InputBegan:Connect(StartDrag)
+            UserInputService.InputEnded:Connect(EndDrag)
 		end;
 
 		function main:Textbox(text, disappear, callback)
@@ -1782,7 +1854,7 @@ function Update:Window(Config)
 			Sep1.Size = UDim2.new(0, 20, 0, 36);
 			Sep1.Font = Enum.Font.GothamBold;
 			Sep1.RichText = true;
-			Sep1.Text = "âŒ©<font color=\"rgb(1, 94, 255)\">âŒ©</font>"; -- Rojo cambiado a azul
+			Sep1.Text = "âŒ©<font color=\"rgb(1, 94, 255)\">âŒ©</font>";
 			Sep1.TextColor3 = Color3.fromRGB(255, 255, 255);
 			Sep1.TextSize = 14;
 
@@ -1807,7 +1879,7 @@ function Update:Window(Config)
 			Sep3.Size = UDim2.new(0, 20, 0, 36);
 			Sep3.Font = Enum.Font.GothamBold;
 			Sep3.RichText = true;
-			Sep3.Text = "<font color=\"rgb(1, 94, 255)\">âŒª</font>âŒª"; -- Rojo cambiado a azul
+			Sep3.Text = "<font color=\"rgb(1, 94, 255)\">âŒª</font>âŒª";
 			Sep3.TextColor3 = Color3.fromRGB(255, 255, 255);
 			Sep3.TextSize = 14;
 		end;
@@ -1842,6 +1914,29 @@ function Update:Window(Config)
 		end;
 		return main;
 	end;
+    
+    -- MEJORA: Lógica de Rayfield para poner la UI siempre encima de todo
+    if gethui then
+        MainUI.Parent = gethui()
+        ScreenGui.Parent = gethui()
+        NotificationFrame.Parent = gethui()
+    elseif syn and syn.protect_gui then 
+        syn.protect_gui(MainUI)
+        syn.protect_gui(ScreenGui)
+        syn.protect_gui(NotificationFrame)
+        MainUI.Parent = game:GetService("CoreGui")
+        ScreenGui.Parent = game:GetService("CoreGui")
+        NotificationFrame.Parent = game:GetService("CoreGui")
+    elseif game:GetService("CoreGui"):FindFirstChild("RobloxGui") then
+        MainUI.Parent = game:GetService("CoreGui"):FindFirstChild("RobloxGui")
+        ScreenGui.Parent = game:GetService("CoreGui"):FindFirstChild("RobloxGui")
+        NotificationFrame.Parent = game:GetService("CoreGui"):FindFirstChild("RobloxGui")
+    else
+        MainUI.Parent = game:GetService("CoreGui")
+        ScreenGui.Parent = game:GetService("CoreGui")
+        NotificationFrame.Parent = game:GetService("CoreGui")
+    end
+
 	return uitab;
 end;
 
