@@ -1,5 +1,6 @@
 -- =========================================================
--- LIBRERÍA xSOLITOx HUB - VERSIÓN MODIFICADA
+-- LIBRERÍA xSOLITOx HUB - VERSIÓN MEJORADA Y REESTRUCTURADA
+-- Por xSOLITOx, con mejoras de IA
 -- =========================================================
 
 -- Técnica de renderizado de máxima prioridad (adaptada de SCRIPT V30.txt)
@@ -9,24 +10,51 @@ local function get_top_gui()
     else return game:GetService("CoreGui") end
 end
 
--- Función para aplicar el degradado personalizado (adaptada de SCRIPT V30.txt)
-local function ApplyPrimaryGradient(frame)
-	-- Limpiamos cualquier gradiente previo para evitar duplicados
+local UserInputService = game:GetService("UserInputService");
+local TweenService = game:GetService("TweenService");
+
+--[[
+    Función de estilo centralizada.
+    Aplica un fondo con degradado brillante y un borde con resplandor.
+    Se usará en botones, toggles, sliders y otros elementos para un look unificado.
+]]
+local function ApplyStyledGradientBorder(frame)
+	-- Limpiamos elementos de estilo previos para evitar duplicados
 	for _, child in ipairs(frame:GetChildren()) do
-		if child:IsA("UIGradient") then
+		if child:IsA("UIGradient") or (child:IsA("UIStroke") and child.Name == "GlowStroke") then
 			child:Destroy()
 		end
 	end
 	
+	-- Fondo con degradado principal
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, Color3.fromHex("#015EFF")), -- Azul brillante
 		ColorSequenceKeypoint.new(1, Color3.fromHex("#FF0546"))  -- Rosa/Rojo brillante
 	})
-	-- Rotación para efecto de izquierda inferior a derecha superior
-	gradient.Rotation = 45 
+	gradient.Rotation = 45 -- De izquierda inferior a derecha superior
 	gradient.Parent = frame
-	return gradient
+
+	-- Borde con efecto de resplandor (glow)
+	local stroke = Instance.new("UIStroke")
+    stroke.Name = "GlowStroke"
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Thickness = 2
+    stroke.LineJoinMode = Enum.LineJoinMode.Round
+    stroke.Color = Color3.fromRGB(1, 94, 255) 
+	stroke.Transparency = 0
+
+    local transparencyGradient = Instance.new("UIGradient")
+    transparencyGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.2), 
+        NumberSequenceKeypoint.new(0.5, 0.8),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    transparencyGradient.Rotation = 120
+    transparencyGradient.Parent = stroke
+    stroke.Parent = frame
+	
+	return gradient, stroke
 end
 
 
@@ -36,7 +64,8 @@ if (game:GetService("CoreGui")):FindFirstChild("xSOLITOx HUB") and (game:GetServ
 end;
 _G.Primary = Color3.fromRGB(100, 100, 100);
 _G.Dark = Color3.fromRGB(22, 22, 26);
-_G.Third = Color3.fromRGB(255, 0, 0); -- Se mantiene por compatibilidad, pero se reemplazará visualmente.
+_G.Third = Color3.fromRGB(255, 0, 0); 
+_G.ActiveSlider = nil -- Variable global para controlar el deslizador activo
 
 function CreateRounded(Parent, Size)
 	local Rounded = Instance.new("UICorner");
@@ -44,8 +73,7 @@ function CreateRounded(Parent, Size)
 	Rounded.Parent = Parent;
 	Rounded.CornerRadius = UDim.new(0, Size);
 end;
-local UserInputService = game:GetService("UserInputService");
-local TweenService = game:GetService("TweenService");
+
 function MakeDraggable(topbarobject, object)
 	local Dragging = nil;
 	local DragInput = nil;
@@ -54,9 +82,7 @@ function MakeDraggable(topbarobject, object)
 	local function Update(input)
 		local Delta = input.Position - DragStart;
 		local pos = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y);
-		local Tween = TweenService:Create(object, TweenInfo.new(0.15), {
-			Position = pos
-		});
+		local Tween = TweenService:Create(object, TweenInfo.new(0.15), { Position = pos });
 		Tween:Play();
 	end;
 	topbarobject.InputBegan:Connect(function(input)
@@ -82,10 +108,13 @@ function MakeDraggable(topbarobject, object)
 		end;
 	end);
 end;
+
+-- ScreenGui para el icono flotante, con máxima prioridad
 local ScreenGui = Instance.new("ScreenGui");
 ScreenGui.Parent = game.CoreGui;
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
-ScreenGui.DisplayOrder = 2147483646
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+ScreenGui.DisplayOrder = 2147483647; -- Máxima prioridad
+
 local OutlineButton = Instance.new("Frame");
 OutlineButton.Name = "OutlineButton";
 OutlineButton.Parent = ScreenGui;
@@ -95,6 +124,7 @@ OutlineButton.BackgroundTransparency = 0;
 OutlineButton.Position = UDim2.new(0, 10, 0, 10);
 OutlineButton.Size = UDim2.new(0, 50, 0, 50);
 CreateRounded(OutlineButton, 12);
+
 local ImageButton = Instance.new("ImageButton");
 ImageButton.Parent = OutlineButton;
 ImageButton.Position = UDim2.new(0.5, 0, 0.5, 0);
@@ -104,7 +134,7 @@ ImageButton.BackgroundColor3 = _G.Dark;
 ImageButton.ImageColor3 = Color3.fromRGB(250, 250, 250);
 ImageButton.ImageTransparency = 0;
 ImageButton.BackgroundTransparency = 0;
-ImageButton.Image = "rbxassetid://13940080072";
+ImageButton.Image = "rbxassetid://127469928873778"; -- Imagen actualizada
 ImageButton.AutoButtonColor = false;
 MakeDraggable(ImageButton, OutlineButton);
 CreateRounded(ImageButton, 10);
@@ -114,11 +144,12 @@ ImageButton.MouseButton1Click:connect(function()
 		hub.Enabled = not hub.Enabled;
 	end
 end);
+
 local NotificationFrame = Instance.new("ScreenGui");
 NotificationFrame.Name = "NotificationFrame";
 NotificationFrame.Parent = game.CoreGui;
 NotificationFrame.ZIndexBehavior = Enum.ZIndexBehavior.Global;
-NotificationFrame.DisplayOrder = 2147483647
+NotificationFrame.DisplayOrder = 2147483647; -- Máxima prioridad
 
 local NotificationList = {};
 local function RemoveOldestNotification()
@@ -166,7 +197,7 @@ function Update:Notify(desc)
 	Image.BackgroundTransparency = 1;
 	Image.Position = UDim2.new(0, 8, 0, 8);
 	Image.Size = UDim2.new(0, 45, 0, 45);
-	Image.Image = "rbxassetid://13940080072";
+	Image.Image = "rbxassetid://127469928873778"; -- Imagen actualizada
 	Title.Parent = Frame;
 	Title.BackgroundColor3 = _G.Primary;
 	Title.BackgroundTransparency = 1;
@@ -199,6 +230,7 @@ end;
 function Update:StartLoad()
 	local Loader = Instance.new("ScreenGui");
 	Loader.Parent = game.CoreGui;
+	Loader.Name = "LoaderGUI" -- Nombre único para evitar conflictos
 	Loader.ZIndexBehavior = Enum.ZIndexBehavior.Global;
 	Loader.DisplayOrder = 2147483647;
 	local LoaderFrame = Instance.new("Frame");
@@ -254,8 +286,8 @@ function Update:StartLoad()
 	LoadingBarBackground.ZIndex = 2;
 	local LoadingBar = Instance.new("Frame");
 	LoadingBar.Parent = LoadingBarBackground;
-	--LoadingBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0); <-- Reemplazado por degradado
-	ApplyPrimaryGradient(LoadingBar)
+	--LoadingBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0); <-- Reemplazado
+	ApplyStyledGradientBorder(LoadingBar)
 	LoadingBar.Size = UDim2.new(0, 0, 1, 0);
 	LoadingBar.ZIndex = 3;
 	CreateRounded(LoadingBarBackground, 20);
@@ -363,8 +395,9 @@ function Update:Window(Config)
 	local NoxHub = Instance.new("ScreenGui");
 	NoxHub.Name = "xSOLITOx HUB";
 	NoxHub.Parent = game.CoreGui;
-	NoxHub.DisplayOrder = 2147483647;
+	NoxHub.DisplayOrder = 2147483646; -- Prioridad alta, pero menor que el icono flotante
 	NoxHub.ZIndexBehavior = Enum.ZIndexBehavior.Global;
+	NoxHub.Enabled = false -- Inicia oculta para la precarga
 	
 	local OutlineMain = Instance.new("Frame");
 	OutlineMain.Name = "OutlineMain";
@@ -477,7 +510,7 @@ function Update:Window(Config)
 	BackgroundSettings.Active = true;
 	BackgroundSettings.AnchorPoint = Vector2.new(0, 0);
 	BackgroundSettings.BackgroundColor3 = Color3.fromRGB(10, 10, 10);
-	BackgroundSettings.BackgroundTransparency = 0.3;
+	BackgroundSettings.BackgroundTransparency = 1;
 	BackgroundSettings.Position = UDim2.new(0, 0, 0, 0);
 	BackgroundSettings.Size = UDim2.new(1, 0, 1, 0);
 	BackgroundSettings.Visible = false;
@@ -488,9 +521,9 @@ function Update:Window(Config)
 	SettingsFrame.ClipsDescendants = true;
 	SettingsFrame.AnchorPoint = Vector2.new(0.5, 0.5);
 	SettingsFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
-	SettingsFrame.BackgroundTransparency = 0;
+	SettingsFrame.BackgroundTransparency = 1;
 	SettingsFrame.Position = UDim2.new(0.5, 0, 0.5, 0);
-	SettingsFrame.Size = UDim2.new(0.7, 0, 0.7, 0);
+	SettingsFrame.Size = UDim2.new(0, 0, 0, 0);
 	CreateRounded(SettingsFrame, 15);
 	local CloseSettings = Instance.new("ImageButton");
 	CloseSettings.Name = "CloseSettings";
@@ -505,6 +538,9 @@ function Update:Window(Config)
 	CloseSettings.ImageColor3 = Color3.fromRGB(245, 245, 245);
 	CreateRounded(CloseSettings, 3);
 	CloseSettings.MouseButton1Click:connect(function()
+		TweenService:Create(SettingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,0,0,0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+		TweenService:Create(BackgroundSettings, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+		task.wait(0.3)
 		BackgroundSettings.Visible = false;
 	end);
 	local SettingsButton = Instance.new("ImageButton");
@@ -521,6 +557,11 @@ function Update:Window(Config)
 	CreateRounded(SettingsButton, 3);
 	SettingsButton.MouseButton1Click:connect(function()
 		BackgroundSettings.Visible = true;
+		BackgroundSettings.BackgroundTransparency = 1
+		SettingsFrame.Size = UDim2.new(0,0,0,0)
+		SettingsFrame.Position = UDim2.new(0.5,0,0.5,0)
+		TweenService:Create(SettingsFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.7, 0, 0.7, 0)}):Play()
+		TweenService:Create(BackgroundSettings, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.3}):Play()
 	end);
 	local TitleSettings = Instance.new("TextLabel");
 	TitleSettings.Name = "TitleSettings";
@@ -586,39 +627,48 @@ function Update:Window(Config)
 		Title.TextSize = 15;
 		Title.TextColor3 = Color3.fromRGB(200, 200, 200);
 		Title.TextXAlignment = Enum.TextXAlignment.Left;
+		
+		-- Estructura nueva para el checkbox
+		local CheckboxContainer = Instance.new("Frame")
+		CheckboxContainer.Name = "CheckboxContainer"
+		CheckboxContainer.Parent = Background
+		CheckboxContainer.BackgroundTransparency = 0
+		CheckboxContainer.BackgroundColor3 = Color3.fromRGB(100,100,100)
+		CheckboxContainer.AnchorPoint = Vector2.new(0, 0.5);
+		CheckboxContainer.Position = UDim2.new(0, 30, 0.5, 0);
+		CheckboxContainer.Size = UDim2.new(0, 20, 0, 20);
+		CreateRounded(CheckboxContainer, 5)
+
 		local Checkbox = Instance.new("ImageButton");
 		Checkbox.Name = "Checkbox";
-		Checkbox.Parent = Background;
-		Checkbox.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
-		Checkbox.BackgroundTransparency = 0;
-		Checkbox.AnchorPoint = Vector2.new(0, 0.5);
-		Checkbox.Position = UDim2.new(0, 30, 0.5, 0);
-		Checkbox.Size = UDim2.new(0, 20, 0, 20);
+		Checkbox.Parent = CheckboxContainer;
+		Checkbox.BackgroundTransparency = 1;
+		Checkbox.Size = UDim2.new(1,0,1,0)
 		Checkbox.Image = "rbxassetid://10709790644";
 		Checkbox.ImageTransparency = 1;
 		Checkbox.ImageColor3 = Color3.fromRGB(245, 245, 245);
-		CreateRounded(Checkbox, 5);
+		
 		Checkbox.MouseButton1Click:Connect(function()
 			checked = not checked;
 			if checked then
 				Checkbox.ImageTransparency = 0;
-				Checkbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255); -- Reset to a neutral color
-				ApplyPrimaryGradient(Checkbox)
+				CheckboxContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+				ApplyStyledGradientBorder(CheckboxContainer)
 			else
 				Checkbox.ImageTransparency = 1;
-				Checkbox.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
-				if Checkbox:FindFirstChild("UIGradient") then Checkbox.UIGradient:Destroy() end
+				CheckboxContainer.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
+				if CheckboxContainer:FindFirstChild("UIGradient") then CheckboxContainer.UIGradient:Destroy() end;
+				if CheckboxContainer:FindFirstChild("GlowStroke") then CheckboxContainer.GlowStroke:Destroy() end;
 			end;
 			pcall(callback, checked);
 		end);
 		if checked then
 			Checkbox.ImageTransparency = 0;
-			Checkbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			ApplyPrimaryGradient(Checkbox)
+			CheckboxContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+			ApplyStyledGradientBorder(CheckboxContainer)
 		else
 			Checkbox.ImageTransparency = 1;
-			Checkbox.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
-			if Checkbox:FindFirstChild("UIGradient") then Checkbox.UIGradient:Destroy() end
+			CheckboxContainer.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
 		end;
 		pcall(callback, checked);
 	end;
@@ -633,7 +683,7 @@ function Update:Window(Config)
 		local Button = Instance.new("TextButton");
 		Button.Name = "Button";
 		Button.Parent = Background;
-		ApplyPrimaryGradient(Button)
+		ApplyStyledGradientBorder(Button)
 		Button.BackgroundTransparency = 0;
 		Button.Size = UDim2.new(0.8, 0, 0, 30);
 		Button.Font = Enum.Font.Code;
@@ -768,7 +818,7 @@ function Update:Window(Config)
 		SelectedTab.Name = "SelectedTab";
 		SelectedTab.Parent = TabButton;
 		--SelectedTab.BackgroundColor3 = _G.Third; <-- Reemplazado
-		ApplyPrimaryGradient(SelectedTab)
+		ApplyStyledGradientBorder(SelectedTab)
 		SelectedTab.BackgroundTransparency = 0;
 		SelectedTab.Size = UDim2.new(0, 3, 0, 0);
 		SelectedTab.Position = UDim2.new(0, 0, 0.5, 0);
@@ -1077,35 +1127,38 @@ function Update:Window(Config)
 			Circle.AnchorPoint = Vector2.new(0, 0.5);
 			UICorner_4.CornerRadius = UDim.new(0, 10);
 			UICorner_4.Parent = Circle;
-
+			
 			local function setToggleState(state, playTween)
 				local info = TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+				local onPosition = UDim2.new(1, -17, 0.5, 0) -- Final position (right)
+				local offPosition = UDim2.new(0, 3, 0.5, 0) -- Start position (left)
+
 				if state then
 					toggled = true;
 					if playTween then
-						Circle:TweenPosition(UDim2.new(1, -17, 0.5, 0), "Out", "Sine", 0.2, true);
+						Circle:TweenPosition(onPosition, "Out", "Sine", 0.2, true);
 						local tween = TweenService:Create(ToggleImage, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 })
 						tween:Play()
 						tween.Completed:Wait()
-						ApplyPrimaryGradient(ToggleImage)
+						ApplyStyledGradientBorder(ToggleImage)
 						TweenService:Create(ToggleImage, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
-
 					else
-						Circle.Position = UDim2.new(1, -17, 0.5, 0)
+						Circle.Position = onPosition
 						ToggleImage.BackgroundTransparency = 0
-						ApplyPrimaryGradient(ToggleImage)
+						ApplyStyledGradientBorder(ToggleImage)
 					end
 				else
 					toggled = false;
 					if ToggleImage:FindFirstChild("UIGradient") then ToggleImage.UIGradient:Destroy() end
+					if ToggleImage:FindFirstChild("GlowStroke") then ToggleImage.GlowStroke:Destroy() end
 					if playTween then
-						Circle:TweenPosition(UDim2.new(0, 3, 0.5, 0), "Out", "Sine", 0.2, true);
+						Circle:TweenPosition(offPosition, "Out", "Sine", 0.2, true);
 						(TweenService:Create(ToggleImage, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 							BackgroundColor3 = Color3.fromRGB(200, 200, 200),
 							BackgroundTransparency = 0.8
 						})):Play();
 					else
-						Circle.Position = UDim2.new(0, 3, 0.5, 0)
+						Circle.Position = offPosition
 						ToggleImage.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
 						ToggleImage.BackgroundTransparency = 0.8
 					end
@@ -1242,8 +1295,7 @@ function Update:Window(Config)
 				local SelectedItems = Instance.new("Frame");
 				SelectedItems.Name = "SelectedItems";
 				SelectedItems.Parent = Item;
-				--SelectedItems.BackgroundColor3 = _G.Third; <-- Reemplazado
-				ApplyPrimaryGradient(SelectedItems);
+				ApplyStyledGradientBorder(SelectedItems)
 				SelectedItems.BackgroundTransparency = 1;
 				SelectedItems.Size = UDim2.new(0, 3, 0.4, 0);
 				SelectedItems.Position = UDim2.new(0, -8, 0.5, 0);
@@ -1346,8 +1398,7 @@ function Update:Window(Config)
 				local SelectedItems = Instance.new("Frame");
 				SelectedItems.Name = "SelectedItems";
 				SelectedItems.Parent = Item;
-				--SelectedItems.BackgroundColor3 = _G.Third; <-- Reemplazado
-				ApplyPrimaryGradient(SelectedItems)
+				ApplyStyledGradientBorder(SelectedItems)
 				SelectedItems.BackgroundTransparency = 1;
 				SelectedItems.Size = UDim2.new(0, 3, 0.4, 0);
 				SelectedItems.Position = UDim2.new(0, -8, 0.5, 0);
@@ -1455,16 +1506,16 @@ function Update:Window(Config)
 			bar.Name = "bar";
 			bar.Parent = sliderr;
 			bar.BackgroundColor3 = Color3.fromRGB(200, 200, 200);
-			bar.Size = UDim2.new(0, 100, 0, 8); -- Más grueso
+			bar.Size = UDim2.new(0, 100, 0, 12); -- Más grueso
 			bar.Position = UDim2.new(1, -10, 0.5, 0);
 			bar.BackgroundTransparency = 0.8;
 			bar.AnchorPoint = Vector2.new(1, 0.5);
 			bar1.Name = "bar1";
 			bar1.Parent = bar;
 			--bar1.BackgroundColor3 = _G.Third; <-- Reemplazado
-			ApplyPrimaryGradient(bar1)
+			ApplyStyledGradientBorder(bar1)
 			bar1.BackgroundTransparency = 0;
-			bar1.Size = UDim2.new(set / max, 0, 1, 0); -- Ajustado a 1 en Y.Scale
+			bar1.Size = UDim2.new(set / max, 0, 1, 0);
 			bar1corner.CornerRadius = UDim.new(0, 5);
 			bar1corner.Name = "bar1corner";
 			bar1corner.Parent = bar1;
@@ -1474,9 +1525,9 @@ function Update:Window(Config)
 			circlebar.Name = "circlebar";
 			circlebar.Parent = bar1;
 			circlebar.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			circlebar.Position = UDim2.new(1, 0, 0.5, 0); -- Centrado verticalmente
-			circlebar.AnchorPoint = Vector2.new(0.5, 0.5); -- Centrado
-			circlebar.Size = UDim2.new(0, 15, 0, 15); -- Un poco más grande
+			circlebar.Position = UDim2.new(1, 0, 0.5, 0);
+			circlebar.AnchorPoint = Vector2.new(0.5, 0.5);
+			circlebar.Size = UDim2.new(0, 15, 0, 15);
 			UICorner.CornerRadius = UDim.new(0, 100);
 			UICorner.Parent = circlebar;
 			valuecorner.CornerRadius = UDim.new(0, 2);
@@ -1490,16 +1541,16 @@ function Update:Window(Config)
 					callback(Value);
 				end);
 			end;
-			
 			local Dragging = false
-			local sliderIdentifier = bar -- Unique identifier for this slider
+			local sliderIdentifier = bar
 
 			local function StartDrag()
 				if _G.ActiveSlider and _G.ActiveSlider ~= sliderIdentifier then return end
 				Dragging = true
 				_G.ActiveSlider = sliderIdentifier
+				MainFramePage.ScrollingEnabled = false
 			end
-
+			
 			circlebar.InputBegan:Connect(function(Input)
 				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 					StartDrag()
@@ -1511,23 +1562,29 @@ function Update:Window(Config)
 				end;
 			end);
 			UserInputService.InputEnded:Connect(function(Input)
-				if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and Dragging then
-					Dragging = false
+				if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and Dragging and _G.ActiveSlider == sliderIdentifier then
+					Dragging = false;
 					_G.ActiveSlider = nil
+					MainFramePage.ScrollingEnabled = true
 				end;
 			end);
 			UserInputService.InputChanged:Connect(function(Input)
 				if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-					local relativePos = Input.Position.X - bar.AbsolutePosition.X
-					local clampedPos = math.clamp(relativePos, 0, bar.AbsoluteSize.X)
-					local percentage = clampedPos / bar.AbsoluteSize.X
+					local relativeX = math.clamp(Input.Position.X - bar.AbsolutePosition.X, 0, bar.AbsoluteSize.X)
+					local percentage = relativeX / bar.AbsoluteSize.X
 					
-					Value = math.floor(min + (max - min) * percentage)
+					Value = math.floor(min + (max - min) * percentage + 0.5)
+					
 					pcall(function()
 						callback(Value);
 					end);
 					ValueText.Text = Value;
-					bar1.Size = UDim2.new(percentage, 0, 1, 0);
+					
+					bar1.Size = UDim2.new(percentage, 0, 1, 0)
+					
+					-- Suavizar el movimiento del círculo
+					local goalPos = UDim2.new(percentage, 0, 0.5, 0)
+					TweenService:Create(circlebar, TweenInfo.new(0.1), {Position = goalPos}):Play()
 				end;
 			end);
 		end;
@@ -1618,27 +1675,36 @@ function Update:Window(Config)
 		end;
 		function main:Seperator(text)
 			local Seperator = Instance.new("Frame");
-			local Sep1 = Instance.new("TextLabel");
 			local Sep2 = Instance.new("TextLabel");
-			local Sep3 = Instance.new("TextLabel");
-			local SepRadius = Instance.new("UICorner");
+			
 			Seperator.Name = "Seperator";
 			Seperator.Parent = MainFramePage;
 			Seperator.BackgroundColor3 = _G.Primary;
 			Seperator.BackgroundTransparency = 1;
 			Seperator.Size = UDim2.new(1, 0, 0, 36);
-			Sep1.Name = "Sep1";
-			Sep1.Parent = Seperator;
-			Sep1.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			Sep1.BackgroundTransparency = 1;
-			Sep1.AnchorPoint = Vector2.new(0, 0.5);
-			Sep1.Position = UDim2.new(0, 0, 0.5, 0);
-			Sep1.Size = UDim2.new(0, 20, 0, 36);
-			Sep1.Font = Enum.Font.GothamBold;
-			Sep1.RichText = true;
-			Sep1.Text = "âŒ©<font color=\"rgb(255, 0, 0)\">âŒ©</font>";
-			Sep1.TextColor3 = Color3.fromRGB(255, 255, 255);
-			Sep1.TextSize = 14;
+			
+			local RingContainer = Instance.new("Frame")
+			RingContainer.Parent = Seperator
+			RingContainer.Size = UDim2.new(1,0,1,0)
+			RingContainer.BackgroundTransparency = 1
+			
+			for i = 1, 3 do
+				local Ring = Instance.new("ImageLabel")
+				Ring.Parent = RingContainer
+				Ring.Size = UDim2.new(0, 20, 0, 20)
+				Ring.AnchorPoint = Vector2.new(0.5, 0.5)
+				Ring.Position = UDim2.new(0.5, (i - 2) * 25, 0.5, 0) -- Centra los 3 anillos
+				Ring.BackgroundTransparency = 1
+				Ring.Image = "rbxassetid://5915348391" -- Imagen de anillo
+				Ring.ImageColor3 = Color3.fromRGB(255,255,255)
+				ApplyStyledGradientBorder(Ring)
+				
+				-- Animación de rotación infinita
+				local tweenInfo = TweenInfo.new(2 + (i*0.5), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1)
+				local tween = TweenService:Create(Ring, tweenInfo, {Rotation = 360})
+				tween:Play()
+			end
+			
 			Sep2.Name = "Sep2";
 			Sep2.Parent = Seperator;
 			Sep2.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
@@ -1650,18 +1716,6 @@ function Update:Window(Config)
 			Sep2.Text = text;
 			Sep2.TextColor3 = Color3.fromRGB(255, 255, 255);
 			Sep2.TextSize = 14;
-			Sep3.Name = "Sep3";
-			Sep3.Parent = Seperator;
-			Sep3.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			Sep3.BackgroundTransparency = 1;
-			Sep3.AnchorPoint = Vector2.new(1, 0.5);
-			Sep3.Position = UDim2.new(1, 0, 0.5, 0);
-			Sep3.Size = UDim2.new(0, 20, 0, 36);
-			Sep3.Font = Enum.Font.GothamBold;
-			Sep3.RichText = true;
-			Sep3.Text = "<font color=\"rgb(255, 0, 0)\">âŒª</font>âŒª";
-			Sep3.TextColor3 = Color3.fromRGB(255, 255, 255);
-			Sep3.TextSize = 14;
 		end;
 		function main:Line()
 			local Linee = Instance.new("Frame");
@@ -1693,9 +1747,9 @@ function Update:Window(Config)
 	return uitab;
 end;
 
--- Mover la UI al final de la ejecución para máxima prioridad
+-- Lógica final de ejecución y precarga
 task.spawn(function()
-    task.wait(0.1) -- Espera un momento para que todo se cree
+    task.wait(0.1) -- Pequeña espera para que todo se inicialice
     local guis_a_mover = {"xSOLITOx HUB", "NotificationFrame", "ScreenGui"}
     local lugar_vip = get_top_gui()
     local core_gui = game:GetService("CoreGui")
