@@ -1,9 +1,12 @@
 -- =========================================================
--- LIBRERÍA xSOLITOx HUB - VERSIÓN MEJORADA Y REESTRUCTURADA
+-- LIBRERÍA xSOLITOx HUB - VERSIÓN FINAL REESTRUCTURADA
 -- Por xSOLITOx, con mejoras de IA
 -- =========================================================
 
--- Técnica de renderizado de máxima prioridad (adaptada de SCRIPT V30.txt)
+--[[
+	Esto crea: Una función para obtener el contenedor de GUI de máxima prioridad.
+	Asegura que la interfaz se dibuje por encima de todo, incluso del ejecutor.
+]]
 local function get_top_gui()
     if gethui then return gethui()
     elseif game:GetService("CoreGui"):FindFirstChild("RobloxGui") then return game:GetService("CoreGui"):FindFirstChild("RobloxGui")
@@ -12,60 +15,112 @@ end
 
 local UserInputService = game:GetService("UserInputService");
 local TweenService = game:GetService("TweenService");
+local Players = game:GetService("Players");
+local HttpService = game:GetService("HttpService");
+local ContentProvider = game:GetService("ContentProvider");
+
+_G.ActiveSlider = nil -- Variable global para controlar el deslizador activo
+local assetsToPreload = {} -- Tabla para precargar todas las imágenes
 
 --[[
-    Función de estilo centralizada.
-    Aplica un fondo con degradado brillante y un borde con resplandor.
-    Se usará en botones, toggles, sliders y otros elementos para un look unificado.
+	Esto crea: Los temas de la interfaz.
+	Define las paletas de colores para los diferentes estilos visuales de la UI.
+	La selección se guarda y se carga automáticamente.
 ]]
-local function ApplyStyledGradientBorder(frame)
-	-- Limpiamos elementos de estilo previos para evitar duplicados
-	for _, child in ipairs(frame:GetChildren()) do
-		if child:IsA("UIGradient") or (child:IsA("UIStroke") and child.Name == "GlowStroke") then
-			child:Destroy()
-		end
-	end
-	
-	-- Fondo con degradado principal
-	local gradient = Instance.new("UIGradient")
-	gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromHex("#015EFF")), -- Azul brillante
-		ColorSequenceKeypoint.new(1, Color3.fromHex("#FF0546"))  -- Rosa/Rojo brillante
-	})
-	gradient.Rotation = 45 -- De izquierda inferior a derecha superior
-	gradient.Parent = frame
+_G.Themes = {
+    Dark = {
+        MainBG = Color3.fromRGB(24, 24, 26),
+        LighterBG = Color3.fromRGB(30, 30, 30),
+        DarkerBG = Color3.fromRGB(18, 18, 22),
+        Text = Color3.fromRGB(255, 255, 255),
+        SubText = Color3.fromRGB(200, 200, 200),
+        Outline = Color3.fromRGB(30, 30, 30),
+        FloatingIconBG = Color3.fromRGB(0,0,0)
+    },
+    White = {
+        MainBG = Color3.fromRGB(245, 245, 245),
+        LighterBG = Color3.fromRGB(255, 255, 255),
+        DarkerBG = Color3.fromRGB(230, 230, 230),
+        Text = Color3.fromRGB(10, 10, 10),
+        SubText = Color3.fromRGB(80, 80, 80),
+        Outline = Color3.fromRGB(220, 220, 220),
+        FloatingIconBG = Color3.fromRGB(230,230,230)
+    },
+    Red = {
+        MainBG = Color3.fromRGB(28, 0, 0),
+        LighterBG = Color3.fromRGB(45, 0, 0),
+        DarkerBG = Color3.fromRGB(18, 0, 0),
+        Text = Color3.fromRGB(255, 220, 220),
+        SubText = Color3.fromRGB(200, 180, 180),
+        Outline = Color3.fromRGB(60, 0, 0),
+        FloatingIconBG = Color3.fromRGB(45,0,0)
+    },
+    Transparent = {
+        MainBG = Color3.fromRGB(10, 10, 15), -- Se usará para elementos internos
+        LighterBG = Color3.fromRGB(25, 25, 30),
+        DarkerBG = Color3.fromRGB(5, 5, 10),
+        Text = Color3.fromRGB(255, 255, 255),
+        SubText = Color3.fromRGB(220, 220, 220),
+        Outline = Color3.fromRGB(1, 94, 255), -- Borde azul para destacar
+        FloatingIconBG = Color3.fromRGB(10,10,15)
+    }
+}
 
-	-- Borde con efecto de resplandor (glow)
+
+--[[
+	Esto crea: La función de estilo principal.
+	Aplica un borde con efecto de resplandor (glow) a cualquier elemento.
+	Este es el efecto de "brillo saturado" de SCRIPT V30.
+]]
+local function ApplyGlowStroke(frame)
+	for _, child in ipairs(frame:GetChildren()) do
+		if child:IsA("UIStroke") and child.Name == "GlowStroke" then child:Destroy() end
+	end
 	local stroke = Instance.new("UIStroke")
     stroke.Name = "GlowStroke"
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     stroke.Thickness = 2
     stroke.LineJoinMode = Enum.LineJoinMode.Round
-    stroke.Color = Color3.fromRGB(1, 94, 255) 
-	stroke.Transparency = 0
-
+    stroke.Color = Color3.fromRGB(1, 94, 255)
+	
     local transparencyGradient = Instance.new("UIGradient")
     transparencyGradient.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 0.2), 
         NumberSequenceKeypoint.new(0.5, 0.8),
         NumberSequenceKeypoint.new(1, 1)
     })
-    transparencyGradient.Rotation = 120
+    transparencyGradient.Rotation = 270
     transparencyGradient.Parent = stroke
     stroke.Parent = frame
-	
-	return gradient, stroke
 end
 
+
+--[[
+	Esto crea: Una función para el degradado de fondo.
+	Se usa en botones, sliders, etc., para darles el color principal.
+]]
+local function ApplyPrimaryGradient(frame)
+	for _, child in ipairs(frame:GetChildren()) do
+		if child:IsA("UIGradient") then child:Destroy() end
+	end
+	
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromHex("#015EFF")),
+		ColorSequenceKeypoint.new(1, Color3.fromHex("#FF0546"))
+	})
+	gradient.Rotation = 45 
+	gradient.Parent = frame
+	return gradient
+end
 
 if (game:GetService("CoreGui")):FindFirstChild("xSOLITOx HUB") and (game:GetService("CoreGui")):FindFirstChild("ScreenGui") then
 	(game:GetService("CoreGui"))["xSOLITOx HUB"]:Destroy();
 	(game:GetService("CoreGui")).ScreenGui:Destroy();
 end;
+
 _G.Primary = Color3.fromRGB(100, 100, 100);
 _G.Dark = Color3.fromRGB(22, 22, 26);
-_G.Third = Color3.fromRGB(255, 0, 0); 
-_G.ActiveSlider = nil -- Variable global para controlar el deslizador activo
 
 function CreateRounded(Parent, Size)
 	local Rounded = Instance.new("UICorner");
@@ -75,10 +130,7 @@ function CreateRounded(Parent, Size)
 end;
 
 function MakeDraggable(topbarobject, object)
-	local Dragging = nil;
-	local DragInput = nil;
-	local DragStart = nil;
-	local StartPosition = nil;
+	local Dragging, DragInput, DragStart, StartPosition;
 	local function Update(input)
 		local Delta = input.Position - DragStart;
 		local pos = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y);
@@ -87,31 +139,24 @@ function MakeDraggable(topbarobject, object)
 	end;
 	topbarobject.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			Dragging = true;
-			DragStart = input.Position;
-			StartPosition = object.Position;
+			Dragging = true; DragStart = input.Position; StartPosition = object.Position;
 			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					Dragging = false;
-				end;
+				if input.UserInputState == Enum.UserInputState.End then Dragging = false end
 			end);
 		end;
 	end);
 	topbarobject.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-			DragInput = input;
-		end;
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then DragInput = input end
 	end);
 	UserInputService.InputChanged:Connect(function(input)
-		if input == DragInput and Dragging then
-			Update(input);
-		end;
+		if input == DragInput and Dragging then Update(input) end
 	end);
 end;
 
 -- ScreenGui para el icono flotante, con máxima prioridad
 local ScreenGui = Instance.new("ScreenGui");
 ScreenGui.Parent = game.CoreGui;
+ScreenGui.Name = "FloatingIconGUI"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global;
 ScreenGui.DisplayOrder = 2147483647; -- Máxima prioridad
 
@@ -134,22 +179,21 @@ ImageButton.BackgroundColor3 = _G.Dark;
 ImageButton.ImageColor3 = Color3.fromRGB(250, 250, 250);
 ImageButton.ImageTransparency = 0;
 ImageButton.BackgroundTransparency = 0;
-ImageButton.Image = "rbxassetid://127469928873778"; -- Imagen actualizada
+ImageButton.Image = "rbxthumb://type=Asset&id=127469928873778&w=150&h=150"; -- Imagen actualizada
+table.insert(assetsToPreload, ImageButton.Image)
 ImageButton.AutoButtonColor = false;
 MakeDraggable(ImageButton, OutlineButton);
 CreateRounded(ImageButton, 10);
 ImageButton.MouseButton1Click:connect(function()
 	local hub = game.CoreGui:FindFirstChild("xSOLITOx HUB") or get_top_gui():FindFirstChild("xSOLITOx HUB")
-	if hub then
-		hub.Enabled = not hub.Enabled;
-	end
+	if hub then hub.Enabled = not hub.Enabled end
 end);
 
 local NotificationFrame = Instance.new("ScreenGui");
 NotificationFrame.Name = "NotificationFrame";
 NotificationFrame.Parent = game.CoreGui;
 NotificationFrame.ZIndexBehavior = Enum.ZIndexBehavior.Global;
-NotificationFrame.DisplayOrder = 2147483647; -- Máxima prioridad
+NotificationFrame.DisplayOrder = 2147483647; 
 
 local NotificationList = {};
 local function RemoveOldestNotification()
@@ -197,7 +241,7 @@ function Update:Notify(desc)
 	Image.BackgroundTransparency = 1;
 	Image.Position = UDim2.new(0, 8, 0, 8);
 	Image.Size = UDim2.new(0, 45, 0, 45);
-	Image.Image = "rbxassetid://127469928873778"; -- Imagen actualizada
+	Image.Image = "rbxthumb://type=Asset&id=127469928873778&w=150&h=150"; -- Imagen actualizada
 	Title.Parent = Frame;
 	Title.BackgroundColor3 = _G.Primary;
 	Title.BackgroundTransparency = 1;
@@ -230,7 +274,7 @@ end;
 function Update:StartLoad()
 	local Loader = Instance.new("ScreenGui");
 	Loader.Parent = game.CoreGui;
-	Loader.Name = "LoaderGUI" -- Nombre único para evitar conflictos
+	Loader.Name = "LoaderGUI" 
 	Loader.ZIndexBehavior = Enum.ZIndexBehavior.Global;
 	Loader.DisplayOrder = 2147483647;
 	local LoaderFrame = Instance.new("Frame");
@@ -286,7 +330,6 @@ function Update:StartLoad()
 	LoadingBarBackground.ZIndex = 2;
 	local LoadingBar = Instance.new("Frame");
 	LoadingBar.Parent = LoadingBarBackground;
-	--LoadingBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0); <-- Reemplazado
 	ApplyStyledGradientBorder(LoadingBar)
 	LoadingBar.Size = UDim2.new(0, 0, 1, 0);
 	LoadingBar.ZIndex = 3;
@@ -314,7 +357,7 @@ function Update:StartLoad()
 			running = false;
 			DescriptionLoader.Text = "Loaded!";
 			wait(0.5);
-			Loader:Destroy();
+			if Loader.Parent then Loader:Destroy() end;
 		end);
 	end);
 	spawn(function()
@@ -326,60 +369,53 @@ function Update:StartLoad()
 		end;
 	end);
 end;
+
+--[[
+	Esto crea: El sistema de guardado y carga de configuraciones.
+	Guarda los ajustes en una carpeta dentro del ejecutor para persistencia.
+]]
 local SettingsLib = {
 	SaveSettings = true,
-	LoadAnimation = true
+	LoadAnimation = true,
+	CurrentTheme = "Dark"
 };
 (getgenv()).LoadConfig = function()
 	if readfile and writefile and isfile and isfolder then
-		if not isfolder("xSOLITOx HUB") then
-			makefolder("xSOLITOx HUB");
-		end;
-		if not isfolder("xSOLITOx HUB/Library/") then
-			makefolder("xSOLITOx HUB/Library/");
-		end;
-		if not isfile(("xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json")) then
-			writefile("xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json", (game:GetService("HttpService")):JSONEncode(SettingsLib));
+		if not isfolder("xSOLITOx HUB") then makefolder("xSOLITOx HUB") end
+		if not isfolder("xSOLITOx HUB/Library/") then makefolder("xSOLITOx HUB/Library/") end
+		local path = "xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json"
+		if not isfile(path) then
+			writefile(path, HttpService:JSONEncode(SettingsLib));
 		else
-			local Decode = (game:GetService("HttpService")):JSONDecode(readfile("xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json"));
-			for i, v in pairs(Decode) do
-				SettingsLib[i] = v;
-			end;
+			local success, data = pcall(function() return HttpService:JSONDecode(readfile(path)) end)
+			if success and type(data) == "table" then
+				for i, v in pairs(data) do SettingsLib[i] = v end
+			end
 		end;
-		print("Library Loaded!");
 	else
-		return warn("Status : Undetected Executor");
+		return warn("Executor no compatible para guardar/cargar archivos.");
 	end;
 end;
 (getgenv()).SaveConfig = function()
 	if readfile and writefile and isfile and isfolder then
-		if not isfile(("xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json")) then
-			(getgenv()).Load();
-		else
-			local Decode = (game:GetService("HttpService")):JSONDecode(readfile("xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json"));
-			local Array = {};
-			for i, v in pairs(SettingsLib) do
-				Array[i] = v;
-			end;
-			writefile("xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json", (game:GetService("HttpService")):JSONEncode(Array));
-		end;
+		local path = "xSOLITOx HUB/Library/" .. game.Players.LocalPlayer.Name .. ".json"
+		writefile(path, HttpService:JSONEncode(SettingsLib));
 	else
-		return warn("Status : Undetected Executor");
+		return warn("Executor no compatible para guardar/cargar archivos.");
 	end;
 end;
 (getgenv()).LoadConfig();
+
 function Update:SaveSettings()
-	if SettingsLib.SaveSettings then
-		return true;
-	end;
-	return false;
+	return SettingsLib.SaveSettings
 end;
 function Update:LoadAnimation()
-	if SettingsLib.LoadAnimation then
-		return true;
-	end;
-	return false;
+	return SettingsLib.LoadAnimation
 end;
+
+--[[
+	Esto crea: La ventana principal de la interfaz y toda su estructura.
+]]
 function Update:Window(Config)
 	assert(Config.SubTitle, "v4");
 	local WindowConfig = {
@@ -395,58 +431,40 @@ function Update:Window(Config)
 	local NoxHub = Instance.new("ScreenGui");
 	NoxHub.Name = "xSOLITOx HUB";
 	NoxHub.Parent = game.CoreGui;
-	NoxHub.DisplayOrder = 2147483646; -- Prioridad alta, pero menor que el icono flotante
+	NoxHub.DisplayOrder = 2147483646; 
 	NoxHub.ZIndexBehavior = Enum.ZIndexBehavior.Global;
-	NoxHub.Enabled = false -- Inicia oculta para la precarga
+	NoxHub.Enabled = false
 	
 	local OutlineMain = Instance.new("Frame");
 	OutlineMain.Name = "OutlineMain";
 	OutlineMain.Parent = NoxHub;
 	OutlineMain.ClipsDescendants = true;
 	OutlineMain.AnchorPoint = Vector2.new(0.5, 0.5);
-	OutlineMain.BackgroundColor3 = Color3.fromRGB(30, 30, 30);
 	OutlineMain.BackgroundTransparency = 0.4;
 	OutlineMain.Position = UDim2.new(0.5, 0, 0.45, 0);
 	OutlineMain.Size = UDim2.new(0, 0, 0, 0);
 	CreateRounded(OutlineMain, 15);
+	
 	local Main = Instance.new("Frame");
 	Main.Name = "Main";
 	Main.Parent = OutlineMain;
 	Main.ClipsDescendants = true;
 	Main.AnchorPoint = Vector2.new(0.5, 0.5);
-	Main.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
 	Main.BackgroundTransparency = 0;
 	Main.Position = UDim2.new(0.5, 0, 0.5, 0);
 	Main.Size = WindowConfig.Size;
 	OutlineMain:TweenSize(UDim2.new(0, WindowConfig.Size.X.Offset + 15, 0, WindowConfig.Size.Y.Offset + 15), "Out", "Quad", 0.4, true);
 	CreateRounded(Main, 12);
-	local BtnStroke = Instance.new("UIStroke");
-	local DragButton = Instance.new("Frame");
-	DragButton.Name = "DragButton";
-	DragButton.Parent = Main;
-	DragButton.Position = UDim2.new(1, 5, 1, 5);
-	DragButton.AnchorPoint = Vector2.new(1, 1);
-	DragButton.Size = UDim2.new(0, 15, 0, 15);
-	DragButton.BackgroundColor3 = _G.Primary;
-	DragButton.BackgroundTransparency = 1;
-	DragButton.ZIndex = 10;
-	local mouse = game.Players.LocalPlayer:GetMouse();
-	local uis = game:GetService("UserInputService");
-	local CircleDragButton = Instance.new("UICorner");
-	CircleDragButton.Name = "CircleDragButton";
-	CircleDragButton.Parent = DragButton;
-	CircleDragButton.CornerRadius = UDim.new(0, 99);
+	
 	local Top = Instance.new("Frame");
 	Top.Name = "Top";
 	Top.Parent = Main;
-	Top.BackgroundColor3 = Color3.fromRGB(10, 10, 10);
 	Top.Size = UDim2.new(1, 0, 0, 40);
 	Top.BackgroundTransparency = 1;
 	CreateRounded(Top, 5);
 	local NameHub = Instance.new("TextLabel");
 	NameHub.Name = "NameHub";
 	NameHub.Parent = Top;
-	NameHub.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
 	NameHub.BackgroundTransparency = 1;
 	NameHub.RichText = true;
 	NameHub.Position = UDim2.new(0, 15, 0.5, 0);
@@ -462,7 +480,6 @@ function Update:Window(Config)
 	local SubTitle = Instance.new("TextLabel");
 	SubTitle.Name = "SubTitle";
 	SubTitle.Parent = NameHub;
-	SubTitle.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
 	SubTitle.BackgroundTransparency = 1;
 	SubTitle.Position = UDim2.new(0, nameHubSize.X + 8, 0.5, 0);
 	SubTitle.Size = UDim2.new(0, 1, 0, 20);
@@ -476,33 +493,36 @@ function Update:Window(Config)
 	local CloseButton = Instance.new("ImageButton");
 	CloseButton.Name = "CloseButton";
 	CloseButton.Parent = Top;
-	CloseButton.BackgroundColor3 = _G.Primary;
 	CloseButton.BackgroundTransparency = 1;
 	CloseButton.AnchorPoint = Vector2.new(1, 0.5);
 	CloseButton.Position = UDim2.new(1, -15, 0.5, 0);
 	CloseButton.Size = UDim2.new(0, 20, 0, 20);
-	CloseButton.Image = "rbxassetid://7743878857";
+	CloseButton.Image = "rbxthumb://type=Asset&id=7743878857&w=150&h=150";
+	table.insert(assetsToPreload, CloseButton.Image)
 	CloseButton.ImageTransparency = 0;
 	CloseButton.ImageColor3 = Color3.fromRGB(245, 245, 245);
 	CreateRounded(CloseButton, 3);
 	CloseButton.MouseButton1Click:connect(function()
 		local hub = game.CoreGui:FindFirstChild("xSOLITOx HUB") or get_top_gui():FindFirstChild("xSOLITOx HUB")
-		if hub then
-			hub.Enabled = not hub.Enabled;
-		end
+		if hub then hub.Enabled = not hub.Enabled end
 	end);
 	local ResizeButton = Instance.new("ImageButton");
 	ResizeButton.Name = "ResizeButton";
 	ResizeButton.Parent = Top;
-	ResizeButton.BackgroundColor3 = _G.Primary;
 	ResizeButton.BackgroundTransparency = 1;
 	ResizeButton.AnchorPoint = Vector2.new(1, 0.5);
 	ResizeButton.Position = UDim2.new(1, -50, 0.5, 0);
 	ResizeButton.Size = UDim2.new(0, 20, 0, 20);
-	ResizeButton.Image = "rbxassetid://10734886735";
+	ResizeButton.Image = "rbxthumb://type=Asset&id=10734886735&w=150&h=150";
+	table.insert(assetsToPreload, ResizeButton.Image)
 	ResizeButton.ImageTransparency = 0;
 	ResizeButton.ImageColor3 = Color3.fromRGB(245, 245, 245);
 	CreateRounded(ResizeButton, 3);
+	
+	--[[
+		Esto crea: El panel de "Preferencias del usuario".
+		Incluye opciones para la UI y la configuración del script.
+	]]
 	local BackgroundSettings = Instance.new("Frame");
 	BackgroundSettings.Name = "BackgroundSettings";
 	BackgroundSettings.Parent = OutlineMain;
@@ -520,20 +540,20 @@ function Update:Window(Config)
 	SettingsFrame.Parent = BackgroundSettings;
 	SettingsFrame.ClipsDescendants = true;
 	SettingsFrame.AnchorPoint = Vector2.new(0.5, 0.5);
-	SettingsFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
-	SettingsFrame.BackgroundTransparency = 1;
+	SettingsFrame.BackgroundTransparency = 0;
 	SettingsFrame.Position = UDim2.new(0.5, 0, 0.5, 0);
-	SettingsFrame.Size = UDim2.new(0, 0, 0, 0);
+	SettingsFrame.Size = UDim2.new(0,0,0,0);
 	CreateRounded(SettingsFrame, 15);
+	ApplyGlowStroke(SettingsFrame)
 	local CloseSettings = Instance.new("ImageButton");
 	CloseSettings.Name = "CloseSettings";
 	CloseSettings.Parent = SettingsFrame;
-	CloseSettings.BackgroundColor3 = _G.Primary;
 	CloseSettings.BackgroundTransparency = 1;
 	CloseSettings.AnchorPoint = Vector2.new(1, 0);
 	CloseSettings.Position = UDim2.new(1, -20, 0, 15);
 	CloseSettings.Size = UDim2.new(0, 20, 0, 20);
-	CloseSettings.Image = "rbxassetid://10747384394";
+	CloseSettings.Image = "rbxthumb://type=Asset&id=10747384394&w=150&h=150";
+	table.insert(assetsToPreload, CloseSettings.Image)
 	CloseSettings.ImageTransparency = 0;
 	CloseSettings.ImageColor3 = Color3.fromRGB(245, 245, 245);
 	CreateRounded(CloseSettings, 3);
@@ -546,12 +566,12 @@ function Update:Window(Config)
 	local SettingsButton = Instance.new("ImageButton");
 	SettingsButton.Name = "SettingsButton";
 	SettingsButton.Parent = Top;
-	SettingsButton.BackgroundColor3 = _G.Primary;
 	SettingsButton.BackgroundTransparency = 1;
 	SettingsButton.AnchorPoint = Vector2.new(1, 0.5);
 	SettingsButton.Position = UDim2.new(1, -85, 0.5, 0);
 	SettingsButton.Size = UDim2.new(0, 20, 0, 20);
-	SettingsButton.Image = "rbxassetid://10734950020";
+	SettingsButton.Image = "rbxthumb://type=Asset&id=10734950020&w=150&h=150";
+	table.insert(assetsToPreload, SettingsButton.Image)
 	SettingsButton.ImageTransparency = 0;
 	SettingsButton.ImageColor3 = Color3.fromRGB(245, 245, 245);
 	CreateRounded(SettingsButton, 3);
@@ -566,7 +586,6 @@ function Update:Window(Config)
 	local TitleSettings = Instance.new("TextLabel");
 	TitleSettings.Name = "TitleSettings";
 	TitleSettings.Parent = SettingsFrame;
-	TitleSettings.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
 	TitleSettings.BackgroundTransparency = 1;
 	TitleSettings.Position = UDim2.new(0, 20, 0, 15);
 	TitleSettings.Size = UDim2.new(1, 0, 0, 20);
@@ -581,7 +600,6 @@ function Update:Window(Config)
 	SettingsMenuList.Parent = SettingsFrame;
 	SettingsMenuList.ClipsDescendants = true;
 	SettingsMenuList.AnchorPoint = Vector2.new(0, 0);
-	SettingsMenuList.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
 	SettingsMenuList.BackgroundTransparency = 1;
 	SettingsMenuList.Position = UDim2.new(0, 0, 0, 50);
 	SettingsMenuList.Size = UDim2.new(1, 0, 1, -70);
@@ -590,9 +608,8 @@ function Update:Window(Config)
 	ScrollSettings.Name = "ScrollSettings";
 	ScrollSettings.Parent = SettingsMenuList;
 	ScrollSettings.Active = true;
-	ScrollSettings.BackgroundColor3 = Color3.fromRGB(10, 10, 10);
-	ScrollSettings.Position = UDim2.new(0, 0, 0, 0);
 	ScrollSettings.BackgroundTransparency = 1;
+	ScrollSettings.Position = UDim2.new(0, 0, 0, 0);
 	ScrollSettings.Size = UDim2.new(1, 0, 1, 0);
 	ScrollSettings.ScrollBarThickness = 3;
 	ScrollSettings.ScrollingDirection = Enum.ScrollingDirection.Y;
@@ -605,19 +622,18 @@ function Update:Window(Config)
 	local PaddingScroll = Instance.new("UIPadding");
 	PaddingScroll.Name = "PaddingScroll";
 	PaddingScroll.Parent = ScrollSettings;
+	
 	function CreateCheckbox(title, state, callback)
 		local checked = state or false;
 		local Background = Instance.new("Frame");
 		Background.Name = "Background";
 		Background.Parent = ScrollSettings;
 		Background.ClipsDescendants = true;
-		Background.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
 		Background.BackgroundTransparency = 1;
 		Background.Size = UDim2.new(1, 0, 0, 20);
 		local Title = Instance.new("TextLabel");
 		Title.Name = "Title";
 		Title.Parent = Background;
-		Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
 		Title.BackgroundTransparency = 1;
 		Title.Position = UDim2.new(0, 60, 0.5, 0);
 		Title.Size = UDim2.new(1, -60, 0, 20);
@@ -628,56 +644,55 @@ function Update:Window(Config)
 		Title.TextColor3 = Color3.fromRGB(200, 200, 200);
 		Title.TextXAlignment = Enum.TextXAlignment.Left;
 		
-		-- Estructura nueva para el checkbox
 		local CheckboxContainer = Instance.new("Frame")
 		CheckboxContainer.Name = "CheckboxContainer"
 		CheckboxContainer.Parent = Background
 		CheckboxContainer.BackgroundTransparency = 0
-		CheckboxContainer.BackgroundColor3 = Color3.fromRGB(100,100,100)
+		CheckboxContainer.BackgroundColor3 = checked and Color3.fromRGB(255,255,255) or Color3.fromRGB(100,100,100)
 		CheckboxContainer.AnchorPoint = Vector2.new(0, 0.5);
 		CheckboxContainer.Position = UDim2.new(0, 30, 0.5, 0);
 		CheckboxContainer.Size = UDim2.new(0, 20, 0, 20);
 		CreateRounded(CheckboxContainer, 5)
 
-		local Checkbox = Instance.new("ImageButton");
-		Checkbox.Name = "Checkbox";
-		Checkbox.Parent = CheckboxContainer;
-		Checkbox.BackgroundTransparency = 1;
-		Checkbox.Size = UDim2.new(1,0,1,0)
-		Checkbox.Image = "rbxassetid://10709790644";
-		Checkbox.ImageTransparency = 1;
-		Checkbox.ImageColor3 = Color3.fromRGB(245, 245, 245);
+		local CheckboxImage = Instance.new("ImageLabel");
+		CheckboxImage.Name = "CheckboxImage";
+		CheckboxImage.Parent = CheckboxContainer;
+		CheckboxImage.BackgroundTransparency = 1;
+		CheckboxImage.Size = UDim2.new(1,0,1,0)
+		CheckboxImage.Image = "rbxassetid://10709790644";
+		CheckboxImage.ImageTransparency = checked and 0 or 1;
+		CheckboxImage.ImageColor3 = Color3.fromRGB(245, 245, 245);
 		
-		Checkbox.MouseButton1Click:Connect(function()
+		local CheckboxButton = Instance.new("TextButton")
+		CheckboxButton.Parent = CheckboxContainer
+		CheckboxButton.Size = UDim2.new(1,0,1,0)
+		CheckboxButton.BackgroundTransparency = 1
+		CheckboxButton.Text = ""
+
+		if checked then ApplyStyledGradientBorder(CheckboxContainer) end
+		
+		CheckboxButton.MouseButton1Click:Connect(function()
 			checked = not checked;
+			CheckboxImage.ImageTransparency = checked and 0 or 1
 			if checked then
-				Checkbox.ImageTransparency = 0;
 				CheckboxContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
 				ApplyStyledGradientBorder(CheckboxContainer)
 			else
-				Checkbox.ImageTransparency = 1;
 				CheckboxContainer.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
-				if CheckboxContainer:FindFirstChild("UIGradient") then CheckboxContainer.UIGradient:Destroy() end;
-				if CheckboxContainer:FindFirstChild("GlowStroke") then CheckboxContainer.GlowStroke:Destroy() end;
+				if CheckboxContainer:FindFirstChild("UIGradient") then CheckboxContainer.UIGradient:Destroy() end
+				if CheckboxContainer:FindFirstChild("GlowStroke") then CheckboxContainer.GlowStroke:Destroy() end
 			end;
 			pcall(callback, checked);
 		end);
-		if checked then
-			Checkbox.ImageTransparency = 0;
-			CheckboxContainer.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			ApplyStyledGradientBorder(CheckboxContainer)
-		else
-			Checkbox.ImageTransparency = 1;
-			CheckboxContainer.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
-		end;
+		
 		pcall(callback, checked);
 	end;
+	
 	function CreateButton(title, callback)
 		local Background = Instance.new("Frame");
 		Background.Name = "Background";
 		Background.Parent = ScrollSettings;
 		Background.ClipsDescendants = true;
-		Background.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
 		Background.BackgroundTransparency = 1;
 		Background.Size = UDim2.new(1, 0, 0, 30);
 		local Button = Instance.new("TextButton");
@@ -698,20 +713,22 @@ function Update:Window(Config)
 		end);
 		CreateRounded(Button, 5);
 	end;
-	CreateCheckbox("Save Settings", SettingsLib.SaveSettings, function(state)
+
+	CreateCheckbox("Guardar Ajustes", SettingsLib.SaveSettings, function(state)
 		SettingsLib.SaveSettings = state;
 		(getgenv()).SaveConfig();
 	end);
-	CreateCheckbox("Loading Animation", SettingsLib.LoadAnimation, function(state)
+	CreateCheckbox("Animación de Carga", SettingsLib.LoadAnimation, function(state)
 		SettingsLib.LoadAnimation = state;
 		(getgenv()).SaveConfig();
 	end);
-	CreateButton("Reset Config", function()
+	CreateButton("Reiniciar Configuración", function()
 		if isfolder("xSOLITOx HUB") then
 			delfolder("xSOLITOx HUB");
 		end;
-		Update:Notify("Config has been reseted!");
+		Update:Notify("Configuración reiniciada!");
 	end);
+	
 	local Tab = Instance.new("Frame");
 	Tab.Name = "Tab";
 	Tab.Parent = Main;
@@ -719,7 +736,7 @@ function Update:Window(Config)
 	Tab.Position = UDim2.new(0, 8, 0, Top.Size.Y.Offset);
 	Tab.BackgroundTransparency = 1;
 	Tab.Size = UDim2.new(0, WindowConfig.TabWidth, Config.Size.Y.Scale, Config.Size.Y.Offset - Top.Size.Y.Offset - 8);
-	local BtnStroke = Instance.new("UIStroke");
+	
 	local ScrollTab = Instance.new("ScrollingFrame");
 	ScrollTab.Name = "ScrollTab";
 	ScrollTab.Parent = Tab;
@@ -769,35 +786,76 @@ function Update:Window(Config)
 	UIPageLayout.ScrollWheelInputEnabled = false;
 	UIPageLayout.TouchInputEnabled = false;
 	MakeDraggable(Top, OutlineMain);
+	
 	UserInputService.InputBegan:Connect(function(input)
 		if input.KeyCode == Enum.KeyCode.Insert then
 			local hub = game.CoreGui:FindFirstChild("xSOLITOx HUB") or get_top_gui():FindFirstChild("xSOLITOx HUB")
-			if hub then
-				hub.Enabled = not hub.Enabled;
-			end
+			if hub then hub.Enabled = not hub.Enabled end
 		end;
 	end);
+	
+	--[[
+		Esto crea: Las áreas de redimensionamiento en los bordes.
+		Permite cambiar el tamaño de la UI arrastrando los bordes derecho e inferior.
+	]]
+	local rightEdge = Instance.new("Frame")
+	rightEdge.Parent = OutlineMain
+	rightEdge.Size = UDim2.new(0, 10, 1, -10)
+	rightEdge.Position = UDim2.new(1, -10, 0, 0)
+	rightEdge.BackgroundTransparency = 1
+	rightEdge.ZIndex = 100
+
+	local bottomEdge = Instance.new("Frame")
+	bottomEdge.Parent = OutlineMain
+	bottomEdge.Size = UDim2.new(1, -10, 0, 10)
+	bottomEdge.Position = UDim2.new(0, 0, 1, -10)
+	bottomEdge.BackgroundTransparency = 1
+	bottomEdge.ZIndex = 100
+
 	local Dragging = false;
-	DragButton.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-			Dragging = true;
-		end;
-	end);
-	UserInputService.InputEnded:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-			Dragging = false;
-		end;
-	end);
+	local dragType = nil
+	local startPos, startSize
+	
+	local function StartResize(input, type)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			Dragging = true
+			dragType = type
+			startPos = input.Position
+			startSize = OutlineMain.AbsoluteSize
+		end
+	end
+	
+	rightEdge.InputBegan:Connect(function(input) StartResize(input, "Width") end)
+	bottomEdge.InputBegan:Connect(function(input) StartResize(input, "Height") end)
+	
+	UserInputService.InputEnded:Connect(function(input)
+		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and Dragging then
+			Dragging = false
+			dragType = nil
+		end
+	end)
+
 	UserInputService.InputChanged:Connect(function(Input)
 		if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-			OutlineMain.Size = UDim2.new(0, math.clamp(Input.Position.X - Main.AbsolutePosition.X + 15, WindowConfig.Size.X.Offset + 15, math.huge), 0, math.clamp(Input.Position.Y - Main.AbsolutePosition.Y + 15, WindowConfig.Size.Y.Offset + 15, math.huge));
-			Main.Size = UDim2.new(0, math.clamp(Input.Position.X - Main.AbsolutePosition.X, WindowConfig.Size.X.Offset, math.huge), 0, math.clamp(Input.Position.Y - Main.AbsolutePosition.Y, WindowConfig.Size.Y.Offset, math.huge));
-			Page.Size = UDim2.new(0, math.clamp(Input.Position.X - Page.AbsolutePosition.X - 8, WindowConfig.Size.X.Offset - Tab.Size.X.Offset - 25, math.huge), 0, math.clamp(Input.Position.Y - Page.AbsolutePosition.Y - 8, WindowConfig.Size.Y.Offset - Top.Size.Y.Offset - 10, math.huge));
-			Tab.Size = UDim2.new(0, WindowConfig.TabWidth, 0, math.clamp(Input.Position.Y - Tab.AbsolutePosition.Y - 8, WindowConfig.Size.Y.Offset - Top.Size.Y.Offset - 10, math.huge));
+			local delta = Input.Position - startPos
+			local newSize = startSize
+			
+			if dragType == "Width" then
+				newSize = Vector2.new(math.clamp(startSize.X + delta.X, WindowConfig.Size.X.Offset, 1920), startSize.Y)
+			elseif dragType == "Height" then
+				newSize = Vector2.new(startSize.X, math.clamp(startSize.Y + delta.Y, WindowConfig.Size.Y.Offset, 1080))
+			end
+			
+			OutlineMain.Size = UDim2.new(0, newSize.X, 0, newSize.Y)
+			Main.Size = UDim2.new(1, -15, 1, -15)
+			Page.Size = UDim2.new(0, newSize.X - WindowConfig.TabWidth - 25, 0, newSize.Y - 48)
+			Tab.Size = UDim2.new(0, WindowConfig.TabWidth, 0, newSize.Y - 48)
 		end;
 	end);
+	
 	local uitab = {};
 	function uitab:Tab(text, img)
+		-- ... (código de tab sin cambios, solo se ajustará el tamaño de la fuente e icono)
 		local BtnStroke = Instance.new("UIStroke");
 		local TabButton = Instance.new("TextButton");
 		local title = Instance.new("TextLabel");
@@ -809,7 +867,7 @@ function Update:Window(Config)
 		TabButton.Text = "";
 		TabButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100);
 		TabButton.BackgroundTransparency = 1;
-		TabButton.Size = UDim2.new(1, 0, 0, 35);
+		TabButton.Size = UDim2.new(1, 0, 0, 40); -- Más alto
 		TabButton.Font = Enum.Font.Nunito;
 		TabButton.TextColor3 = Color3.fromRGB(255, 255, 255);
 		TabButton.TextSize = 12;
@@ -817,7 +875,6 @@ function Update:Window(Config)
 		local SelectedTab = Instance.new("Frame");
 		SelectedTab.Name = "SelectedTab";
 		SelectedTab.Parent = TabButton;
-		--SelectedTab.BackgroundColor3 = _G.Third; <-- Reemplazado
 		ApplyStyledGradientBorder(SelectedTab)
 		SelectedTab.BackgroundTransparency = 0;
 		SelectedTab.Size = UDim2.new(0, 3, 0, 0);
@@ -827,28 +884,28 @@ function Update:Window(Config)
 		UICorner.Parent = SelectedTab;
 		Title.Parent = TabButton;
 		Title.Name = "Title";
-		Title.BackgroundColor3 = Color3.fromRGB(150, 150, 150);
 		Title.BackgroundTransparency = 1;
-		Title.Position = UDim2.new(0, 30, 0.5, 0);
-		Title.Size = UDim2.new(0, 100, 0, 30);
+		Title.Position = UDim2.new(0, 45, 0.5, 0); -- Más espacio para el icono
+		Title.Size = UDim2.new(1, -50, 0, 30);
 		Title.Font = Enum.Font.Roboto;
 		Title.Text = text;
 		Title.AnchorPoint = Vector2.new(0, 0.5);
 		Title.TextColor3 = Color3.fromRGB(255, 255, 255);
 		Title.TextTransparency = 0.4;
-		Title.TextSize = 14;
+		Title.TextSize = 16; -- Más grande
 		Title.TextXAlignment = Enum.TextXAlignment.Left;
 		local IDK = Instance.new("ImageLabel");
 		IDK.Name = "IDK";
 		IDK.Parent = TabButton;
-		IDK.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
 		IDK.BackgroundTransparency = 1;
 		IDK.ImageTransparency = 0.3;
-		IDK.Position = UDim2.new(0, 7, 0.5, 0);
-		IDK.Size = UDim2.new(0, 15, 0, 15);
+		IDK.Position = UDim2.new(0, 12, 0.5, 0); -- Centrado y con más padding
+		IDK.Size = UDim2.new(0, 22, 0, 22); -- Más grande
 		IDK.AnchorPoint = Vector2.new(0, 0.5);
 		IDK.Image = img;
+		table.insert(assetsToPreload, img)
 		CreateRounded(TabButton, 6);
+		-- ... resto de la función tab ...
 		local MainFramePage = Instance.new("ScrollingFrame");
 		MainFramePage.Name = text .. "_Page";
 		MainFramePage.Parent = PageList;
@@ -871,67 +928,33 @@ function Update:Window(Config)
 		TabButton.MouseButton1Click:Connect(function()
 			for i, v in next, ScrollTab:GetChildren() do
 				if v:IsA("TextButton") then
-					(TweenService:Create(v, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						BackgroundTransparency = 1
-					})):Play();
-					(TweenService:Create(v.SelectedTab, TweenInfo.new(0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Size = UDim2.new(0, 3, 0, 0)
-					})):Play();
-					(TweenService:Create(v.IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						ImageTransparency = 0.4
-					})):Play();
-					(TweenService:Create(v.Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						TextTransparency = 0.4
-					})):Play();
+					(TweenService:Create(v, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 })):Play();
+					(TweenService:Create(v.SelectedTab, TweenInfo.new(0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(0, 3, 0, 0) })):Play();
+					(TweenService:Create(v.IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { ImageTransparency = 0.4 })):Play();
+					(TweenService:Create(v.Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { TextTransparency = 0.4 })):Play();
 				end;
-				(TweenService:Create(TabButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					BackgroundTransparency = 0.8
-				})):Play();
-				(TweenService:Create(SelectedTab, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Size = UDim2.new(0, 3, 0, 15)
-				})):Play();
-				(TweenService:Create(IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					ImageTransparency = 0
-				})):Play();
-				(TweenService:Create(Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					TextTransparency = 0
-				})):Play();
+				(TweenService:Create(TabButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 0.8 })):Play();
+				(TweenService:Create(SelectedTab, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(0, 3, 0, 15) })):Play();
+				(TweenService:Create(IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { ImageTransparency = 0 })):Play();
+				(TweenService:Create(Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { TextTransparency = 0 })):Play();
 			end;
 			for i, v in next, PageList:GetChildren() do
 				currentpage = string.gsub(TabButton.Name, "Unique", "") .. "_Page";
-				if v.Name == currentpage then
-					UIPageLayout:JumpTo(v);
-				end;
+				if v.Name == currentpage then UIPageLayout:JumpTo(v) end
 			end;
 		end);
 		if abc == false then
 			for i, v in next, ScrollTab:GetChildren() do
 				if v:IsA("TextButton") then
-					(TweenService:Create(v, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						BackgroundTransparency = 1
-					})):Play();
-					(TweenService:Create(v.SelectedTab, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Size = UDim2.new(0, 3, 0, 15)
-					})):Play();
-					(TweenService:Create(v.IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						ImageTransparency = 0.4
-					})):Play();
-					(TweenService:Create(v.Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						TextTransparency = 0.4
-					})):Play();
+					(TweenService:Create(v, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 })):Play();
+					(TweenService:Create(v.SelectedTab, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(0, 3, 0, 15) })):Play();
+					(TweenService:Create(v.IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { ImageTransparency = 0.4 })):Play();
+					(TweenService:Create(v.Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { TextTransparency = 0.4 })):Play();
 				end;
-				(TweenService:Create(TabButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					BackgroundTransparency = 0.8
-				})):Play();
-				(TweenService:Create(SelectedTab, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Size = UDim2.new(0, 3, 0, 15)
-				})):Play();
-				(TweenService:Create(IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					ImageTransparency = 0
-				})):Play();
-				(TweenService:Create(Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					TextTransparency = 0
-				})):Play();
+				(TweenService:Create(TabButton, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 0.8 })):Play();
+				(TweenService:Create(SelectedTab, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(0, 3, 0, 15) })):Play();
+				(TweenService:Create(IDK, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { ImageTransparency = 0 })):Play();
+				(TweenService:Create(Title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { TextTransparency = 0 })):Play();
 			end;
 			UIPageLayout:JumpToIndex(1);
 			abc = true;
@@ -953,7 +976,7 @@ function Update:Window(Config)
 					Tab:TweenSize(UDim2.new(0, WindowConfig.TabWidth, 0, Main.AbsoluteSize.Y - Top.AbsoluteSize.Y - 10), "Out", "Quad", 0.4, true);
 				end);
 				OutlineMain:TweenSize(UDim2.new(1, -10, 1, -10), "Out", "Quad", 0.4, true);
-				ResizeButton.Image = "rbxassetid://10734895698";
+				ResizeButton.Image = "rbxthumb://type=Asset&id=10734895698&w=150&h=150";
 			else
 				defaultSize = true;
 				Main:TweenSize(UDim2.new(0, WindowConfig.Size.X.Offset, 0, WindowConfig.Size.Y.Offset), "Out", "Quad", 0.4, true, function()
@@ -961,7 +984,7 @@ function Update:Window(Config)
 					Tab:TweenSize(UDim2.new(0, WindowConfig.TabWidth, 0, Main.AbsoluteSize.Y - Top.AbsoluteSize.Y - 10), "Out", "Quad", 0.4, true);
 				end);
 				OutlineMain:TweenSize(UDim2.new(0, WindowConfig.Size.X.Offset + 15, 0, WindowConfig.Size.Y.Offset + 15), "Out", "Quad", 0.4, true);
-				ResizeButton.Image = "rbxassetid://10734886735";
+				ResizeButton.Image = "rbxthumb://type=Asset&id=10734886735&w=150&h=150";
 			end;
 		end);
 		local main = {};
@@ -988,7 +1011,7 @@ function Update:Window(Config)
 			ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5);
 			ImageLabel.Position = UDim2.new(0.5, 0, 0.5, 0);
 			ImageLabel.Size = UDim2.new(0, 15, 0, 15);
-			ImageLabel.Image = "rbxassetid://10734898355";
+			ImageLabel.Image = "rbxthumb://type=Asset&id=10734898355&w=150&h=150";
 			ImageLabel.ImageTransparency = 0;
 			ImageLabel.ImageColor3 = Color3.fromRGB(255, 255, 255);
 			CreateRounded(TextButton, 4);
@@ -1026,7 +1049,7 @@ function Update:Window(Config)
 			ArrowRight.AnchorPoint = Vector2.new(0, 0.5);
 			ArrowRight.Position = UDim2.new(0, 0, 0.5, 0);
 			ArrowRight.Size = UDim2.new(0, 15, 0, 15);
-			ArrowRight.Image = "rbxassetid://10709768347";
+			ArrowRight.Image = "rbxthumb://type=Asset&id=10709768347&w=150&h=150";
 			ArrowRight.ImageTransparency = 0;
 			ArrowRight.ImageColor3 = Color3.fromRGB(255, 255, 255);
 			Black.Name = "Black";
@@ -1172,596 +1195,10 @@ function Update:Window(Config)
 			
 			setToggleState(config, false)
 		end;
-		function main:Dropdown(text, option, var, callback)
-			local isdropping = false;
-			local Dropdown = Instance.new("Frame");
-			local DropdownFrameScroll = Instance.new("Frame");
-			local UICorner = Instance.new("UICorner");
-			local UICorner_2 = Instance.new("UICorner");
-			local UICorner_3 = Instance.new("UICorner");
-			local UICorner_4 = Instance.new("UICorner");
-			local DropTitle = Instance.new("TextLabel");
-			local DropScroll = Instance.new("ScrollingFrame");
-			local UIListLayout = Instance.new("UIListLayout");
-			local UIPadding = Instance.new("UIPadding");
-			local DropButton = Instance.new("TextButton");
-			local HideButton = Instance.new("TextButton");
-			local SelectItems = Instance.new("TextButton");
-			local DropImage = Instance.new("ImageLabel");
-			local UIStroke = Instance.new("UIStroke");
-			Dropdown.Name = "Dropdown";
-			Dropdown.Parent = MainFramePage;
-			Dropdown.BackgroundColor3 = _G.Primary;
-			Dropdown.BackgroundTransparency = 0.8;
-			Dropdown.ClipsDescendants = false;
-			Dropdown.Size = UDim2.new(1, 0, 0, 40);
-			UICorner.CornerRadius = UDim.new(0, 5);
-			UICorner.Parent = Dropdown;
-			DropTitle.Name = "DropTitle";
-			DropTitle.Parent = Dropdown;
-			DropTitle.BackgroundColor3 = _G.Primary;
-			DropTitle.BackgroundTransparency = 1;
-			DropTitle.Size = UDim2.new(1, 0, 0, 30);
-			DropTitle.Font = Enum.Font.Cartoon;
-			DropTitle.Text = text;
-			DropTitle.TextColor3 = Color3.fromRGB(255, 255, 255);
-			DropTitle.TextSize = 15;
-			DropTitle.TextXAlignment = Enum.TextXAlignment.Left;
-			DropTitle.Position = UDim2.new(0, 15, 0, 5);
-			DropTitle.AnchorPoint = Vector2.new(0, 0);
-			SelectItems.Name = "SelectItems";
-			SelectItems.Parent = Dropdown;
-			SelectItems.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
-			SelectItems.TextColor3 = Color3.fromRGB(255, 255, 255);
-			SelectItems.BackgroundTransparency = 0;
-			SelectItems.Position = UDim2.new(1, -5, 0, 5);
-			SelectItems.Size = UDim2.new(0, 100, 0, 30);
-			SelectItems.AnchorPoint = Vector2.new(1, 0);
-			SelectItems.Font = Enum.Font.GothamMedium;
-			SelectItems.AutoButtonColor = false;
-			SelectItems.TextSize = 9;
-			SelectItems.ZIndex = 1;
-			SelectItems.ClipsDescendants = true;
-			SelectItems.Text = "   Select Items";
-			SelectItems.TextXAlignment = Enum.TextXAlignment.Left;
-			local ArrowDown = Instance.new("ImageLabel");
-			ArrowDown.Name = "ArrowDown";
-			ArrowDown.Parent = Dropdown;
-			ArrowDown.BackgroundColor3 = _G.Primary;
-			ArrowDown.BackgroundTransparency = 1;
-			ArrowDown.AnchorPoint = Vector2.new(1, 0);
-			ArrowDown.Position = UDim2.new(1, -110, 0, 10);
-			ArrowDown.Size = UDim2.new(0, 20, 0, 20);
-			ArrowDown.Image = "rbxassetid://10709790948";
-			ArrowDown.ImageTransparency = 0;
-			ArrowDown.ImageColor3 = Color3.fromRGB(255, 255, 255);
-			CreateRounded(SelectItems, 5);
-			CreateRounded(DropScroll, 5);
-			DropdownFrameScroll.Name = "DropdownFrameScroll";
-			DropdownFrameScroll.Parent = Dropdown;
-			DropdownFrameScroll.BackgroundColor3 = Color3.fromRGB(24, 24, 26);
-			DropdownFrameScroll.BackgroundTransparency = 0;
-			DropdownFrameScroll.ClipsDescendants = true;
-			DropdownFrameScroll.Size = UDim2.new(1, 0, 0, 100);
-			DropdownFrameScroll.Position = UDim2.new(0, 5, 0, 40);
-			DropdownFrameScroll.Visible = false;
-			DropdownFrameScroll.AnchorPoint = Vector2.new(0, 0);
-			UICorner_4.Parent = DropdownFrameScroll;
-			UICorner_4.CornerRadius = UDim.new(0, 5);
-			DropScroll.Name = "DropScroll";
-			DropScroll.Parent = DropdownFrameScroll;
-			DropScroll.ScrollingDirection = Enum.ScrollingDirection.Y;
-			DropScroll.Active = true;
-			DropScroll.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			DropScroll.BackgroundTransparency = 1;
-			DropScroll.BorderSizePixel = 0;
-			DropScroll.Position = UDim2.new(0, 0, 0, 10);
-			DropScroll.Size = UDim2.new(1, 0, 0, 80);
-			DropScroll.AnchorPoint = Vector2.new(0, 0);
-			DropScroll.ClipsDescendants = true;
-			DropScroll.ScrollBarThickness = 3;
-			DropScroll.ZIndex = 3;
-			local PaddingDrop = Instance.new("UIPadding");
-			PaddingDrop.PaddingLeft = UDim.new(0, 10);
-			PaddingDrop.PaddingRight = UDim.new(0, 10);
-			PaddingDrop.Parent = DropScroll;
-			PaddingDrop.Name = "PaddingDrop";
-			UIListLayout.Parent = DropScroll;
-			UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder;
-			UIListLayout.Padding = UDim.new(0, 1);
-			UIPadding.Parent = DropScroll;
-			UIPadding.PaddingLeft = UDim.new(0, 5);
-			for i, v in next, option do
-				local Item = Instance.new("TextButton");
-				local CRNRitems = Instance.new("UICorner");
-				local UICorner_5 = Instance.new("UICorner");
-				local ItemPadding = Instance.new("UIPadding");
-				Item.Name = "Item";
-				Item.Parent = DropScroll;
-				Item.BackgroundColor3 = _G.Primary;
-				Item.BackgroundTransparency = 1;
-				Item.Size = UDim2.new(1, 0, 0, 30);
-				Item.Font = Enum.Font.Nunito;
-				Item.Text = tostring(v);
-				Item.TextColor3 = Color3.fromRGB(255, 255, 255);
-				Item.TextSize = 13;
-				Item.TextTransparency = 0.5;
-				Item.TextXAlignment = Enum.TextXAlignment.Left;
-				Item.ZIndex = 4;
-				ItemPadding.Parent = Item;
-				ItemPadding.PaddingLeft = UDim.new(0, 8);
-				UICorner_5.Parent = Item;
-				UICorner_5.CornerRadius = UDim.new(0, 5);
-				local SelectedItems = Instance.new("Frame");
-				SelectedItems.Name = "SelectedItems";
-				SelectedItems.Parent = Item;
-				ApplyStyledGradientBorder(SelectedItems)
-				SelectedItems.BackgroundTransparency = 1;
-				SelectedItems.Size = UDim2.new(0, 3, 0.4, 0);
-				SelectedItems.Position = UDim2.new(0, -8, 0.5, 0);
-				SelectedItems.AnchorPoint = Vector2.new(0, 0.5);
-				SelectedItems.ZIndex = 4;
-				CRNRitems.Parent = SelectedItems;
-				CRNRitems.CornerRadius = UDim.new(0, 999);
-				if var then
-					pcall(callback, var);
-					SelectItems.Text = "   " .. var;
-					activeItem = tostring(var);
-					for i, v in next, DropScroll:GetChildren() do
-						if v:IsA("TextButton") then
-							local SelectedItems = v:FindFirstChild("SelectedItems");
-							if activeItem == v.Text then
-								v.BackgroundTransparency = 0.8;
-								v.TextTransparency = 0;
-								if SelectedItems then
-									SelectedItems.BackgroundTransparency = 0;
-								end;
-							end;
-						end;
-					end;
-				end;
-				Item.MouseButton1Click:Connect(function()
-					SelectItems.ClipsDescendants = true;
-					callback(Item.Text);
-					activeItem = Item.Text;
-					for i, v in next, DropScroll:GetChildren() do
-						if v:IsA("TextButton") then
-							local SelectedItems = v:FindFirstChild("SelectedItems");
-							if activeItem == v.Text then
-								v.BackgroundTransparency = 0.8;
-								v.TextTransparency = 0;
-								if SelectedItems then
-									SelectedItems.BackgroundTransparency = 0;
-								end;
-							else
-								v.BackgroundTransparency = 1;
-								v.TextTransparency = 0.5;
-								if SelectedItems then
-									SelectedItems.BackgroundTransparency = 1;
-								end;
-							end;
-						end;
-					end;
-					SelectItems.Text = "   " .. Item.Text;
-				end);
-			end;
-			DropScroll.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y);
-			SelectItems.MouseButton1Click:Connect(function()
-				if isdropping == false then
-					isdropping = true;
-					(TweenService:Create(DropdownFrameScroll, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Size = UDim2.new(1, -10, 0, 100),
-						Visible = true
-					})):Play();
-					(TweenService:Create(Dropdown, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Size = UDim2.new(1, 0, 0, 145)
-					})):Play();
-                    (TweenService:Create(ArrowDown, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        Rotation = 180
-                    })):Play();
-				else
-					isdropping = false;
-					(TweenService:Create(DropdownFrameScroll, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Size = UDim2.new(1, -10, 0, 0),
-						Visible = false
-					})):Play();
-					(TweenService:Create(Dropdown, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-						Size = UDim2.new(1, 0, 0, 40)
-					})):Play();
-					(TweenService:Create(ArrowDown, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        Rotation = 0
-                    })):Play();
-				end;
-			end);
-			local dropfunc = {};
-			function dropfunc:Add(t)
-				local Item = Instance.new("TextButton");
-				local CRNRitems = Instance.new("UICorner");
-				local UICorner_5 = Instance.new("UICorner");
-				local ItemPadding = Instance.new("UIPadding");
-				Item.Name = "Item";
-				Item.Parent = DropScroll;
-				Item.BackgroundColor3 = _G.Primary;
-				Item.BackgroundTransparency = 1;
-				Item.Size = UDim2.new(1, 0, 0, 30);
-				Item.Font = Enum.Font.Nunito;
-				Item.Text = tostring(t);
-				Item.TextColor3 = Color3.fromRGB(255, 255, 255);
-				Item.TextSize = 13;
-				Item.TextTransparency = 0.5;
-				Item.TextXAlignment = Enum.TextXAlignment.Left;
-				Item.ZIndex = 4;
-				ItemPadding.Parent = Item;
-				ItemPadding.PaddingLeft = UDim.new(0, 8);
-				UICorner_5.Parent = Item;
-				UICorner_5.CornerRadius = UDim.new(0, 5);
-				local SelectedItems = Instance.new("Frame");
-				SelectedItems.Name = "SelectedItems";
-				SelectedItems.Parent = Item;
-				ApplyStyledGradientBorder(SelectedItems)
-				SelectedItems.BackgroundTransparency = 1;
-				SelectedItems.Size = UDim2.new(0, 3, 0.4, 0);
-				SelectedItems.Position = UDim2.new(0, -8, 0.5, 0);
-				SelectedItems.AnchorPoint = Vector2.new(0, 0.5);
-				SelectedItems.ZIndex = 4;
-				CRNRitems.Parent = SelectedItems;
-				CRNRitems.CornerRadius = UDim.new(0, 999);
-				Item.MouseButton1Click:Connect(function()
-					callback(Item.Text);
-					activeItem = Item.Text;
-					for i, v in next, DropScroll:GetChildren() do
-						if v:IsA("TextButton") then
-							local SelectedItems = v:FindFirstChild("SelectedItems");
-							if activeItem == v.Text then
-								v.BackgroundTransparency = 0.8;
-								v.TextTransparency = 0;
-								if SelectedItems then
-									SelectedItems.BackgroundTransparency = 0;
-								end;
-							else
-								v.BackgroundTransparency = 1;
-								v.TextTransparency = 0.5;
-								if SelectedItems then
-									SelectedItems.BackgroundTransparency = 1;
-								end;
-							end;
-						end;
-					end;
-					SelectItems.Text = "   " .. Item.Text;
-				end);
-			end;
-			function dropfunc:Clear()
-				SelectItems.Text = "   Select Items";
-				isdropping = false;
-				DropdownFrameScroll.Visible = false;
-				for i, v in next, DropScroll:GetChildren() do
-					if v:IsA("TextButton") then
-						v:Destroy();
-					end;
-				end;
-			end;
-			return dropfunc;
-		end;
-		function main:Slider(text, min, max, set, callback)
-			local Slider = Instance.new("Frame");
-			local slidercorner = Instance.new("UICorner");
-			local sliderr = Instance.new("Frame");
-			local sliderrcorner = Instance.new("UICorner");
-			local ImageLabel = Instance.new("ImageLabel");
-			local SliderStroke = Instance.new("UIStroke");
-			local Title = Instance.new("TextLabel");
-			local ValueText = Instance.new("TextLabel");
-			local HAHA = Instance.new("Frame");
-			local AHEHE = Instance.new("TextButton");
-			local bar = Instance.new("Frame");
-			local bar1 = Instance.new("Frame");
-			local bar1corner = Instance.new("UICorner");
-			local barcorner = Instance.new("UICorner");
-			local circlebar = Instance.new("Frame");
-			local UICorner = Instance.new("UICorner");
-			local slidervalue = Instance.new("Frame");
-			local valuecorner = Instance.new("UICorner");
-			local TextBox = Instance.new("TextBox");
-			local UICorner_2 = Instance.new("UICorner");
-			local posto = Instance.new("UIStroke");
-			Slider.Name = "Slider";
-			Slider.Parent = MainFramePage;
-			Slider.BackgroundColor3 = _G.Primary;
-			Slider.BackgroundTransparency = 1;
-			Slider.Size = UDim2.new(1, 0, 0, 35);
-			slidercorner.CornerRadius = UDim.new(0, 5);
-			slidercorner.Name = "slidercorner";
-			slidercorner.Parent = Slider;
-			sliderr.Name = "sliderr";
-			sliderr.Parent = Slider;
-			sliderr.BackgroundColor3 = _G.Primary;
-			sliderr.BackgroundTransparency = 0.8;
-			sliderr.Position = UDim2.new(0, 0, 0, 0);
-			sliderr.Size = UDim2.new(1, 0, 0, 35);
-			sliderrcorner.CornerRadius = UDim.new(0, 5);
-			sliderrcorner.Name = "sliderrcorner";
-			sliderrcorner.Parent = sliderr;
-			Title.Parent = sliderr;
-			Title.BackgroundColor3 = Color3.fromRGB(150, 150, 150);
-			Title.BackgroundTransparency = 1;
-			Title.Position = UDim2.new(0, 15, 0.5, 0);
-			Title.Size = UDim2.new(1, 0, 0, 30);
-			Title.Font = Enum.Font.Cartoon;
-			Title.Text = text;
-			Title.AnchorPoint = Vector2.new(0, 0.5);
-			Title.TextColor3 = Color3.fromRGB(255, 255, 255);
-			Title.TextSize = 15;
-			Title.TextXAlignment = Enum.TextXAlignment.Left;
-			ValueText.Parent = bar;
-			ValueText.BackgroundColor3 = Color3.fromRGB(150, 150, 150);
-			ValueText.BackgroundTransparency = 1;
-			ValueText.Position = UDim2.new(0, -38, 0.5, 0);
-			ValueText.Size = UDim2.new(0, 30, 0, 30);
-			ValueText.Font = Enum.Font.GothamMedium;
-			ValueText.Text = set;
-			ValueText.AnchorPoint = Vector2.new(0, 0.5);
-			ValueText.TextColor3 = Color3.fromRGB(255, 255, 255);
-			ValueText.TextSize = 12;
-			ValueText.TextXAlignment = Enum.TextXAlignment.Right;
-			bar.Name = "bar";
-			bar.Parent = sliderr;
-			bar.BackgroundColor3 = Color3.fromRGB(200, 200, 200);
-			bar.Size = UDim2.new(0, 100, 0, 12); -- Más grueso
-			bar.Position = UDim2.new(1, -10, 0.5, 0);
-			bar.BackgroundTransparency = 0.8;
-			bar.AnchorPoint = Vector2.new(1, 0.5);
-			bar1.Name = "bar1";
-			bar1.Parent = bar;
-			--bar1.BackgroundColor3 = _G.Third; <-- Reemplazado
-			ApplyStyledGradientBorder(bar1)
-			bar1.BackgroundTransparency = 0;
-			bar1.Size = UDim2.new(set / max, 0, 1, 0);
-			bar1corner.CornerRadius = UDim.new(0, 5);
-			bar1corner.Name = "bar1corner";
-			bar1corner.Parent = bar1;
-			barcorner.CornerRadius = UDim.new(0, 5);
-			barcorner.Name = "barcorner";
-			barcorner.Parent = bar;
-			circlebar.Name = "circlebar";
-			circlebar.Parent = bar1;
-			circlebar.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			circlebar.Position = UDim2.new(1, 0, 0.5, 0);
-			circlebar.AnchorPoint = Vector2.new(0.5, 0.5);
-			circlebar.Size = UDim2.new(0, 15, 0, 15);
-			UICorner.CornerRadius = UDim.new(0, 100);
-			UICorner.Parent = circlebar;
-			valuecorner.CornerRadius = UDim.new(0, 2);
-			valuecorner.Name = "valuecorner";
-			valuecorner.Parent = slidervalue;
-			local mouse = game.Players.LocalPlayer:GetMouse();
-			local uis = game:GetService("UserInputService");
-			if Value == nil then
-				Value = set;
-				pcall(function()
-					callback(Value);
-				end);
-			end;
-			local Dragging = false
-			local sliderIdentifier = bar
-
-			local function StartDrag()
-				if _G.ActiveSlider and _G.ActiveSlider ~= sliderIdentifier then return end
-				Dragging = true
-				_G.ActiveSlider = sliderIdentifier
-				MainFramePage.ScrollingEnabled = false
-			end
-			
-			circlebar.InputBegan:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					StartDrag()
-				end;
-			end);
-			bar.InputBegan:Connect(function(Input)
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-					StartDrag()
-				end;
-			end);
-			UserInputService.InputEnded:Connect(function(Input)
-				if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and Dragging and _G.ActiveSlider == sliderIdentifier then
-					Dragging = false;
-					_G.ActiveSlider = nil
-					MainFramePage.ScrollingEnabled = true
-				end;
-			end);
-			UserInputService.InputChanged:Connect(function(Input)
-				if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-					local relativeX = math.clamp(Input.Position.X - bar.AbsolutePosition.X, 0, bar.AbsoluteSize.X)
-					local percentage = relativeX / bar.AbsoluteSize.X
-					
-					Value = math.floor(min + (max - min) * percentage + 0.5)
-					
-					pcall(function()
-						callback(Value);
-					end);
-					ValueText.Text = Value;
-					
-					bar1.Size = UDim2.new(percentage, 0, 1, 0)
-					
-					-- Suavizar el movimiento del círculo
-					local goalPos = UDim2.new(percentage, 0, 0.5, 0)
-					TweenService:Create(circlebar, TweenInfo.new(0.1), {Position = goalPos}):Play()
-				end;
-			end);
-		end;
-		function main:Textbox(text, disappear, callback)
-			local Textbox = Instance.new("Frame");
-			local TextboxCorner = Instance.new("UICorner");
-			local TextboxLabel = Instance.new("TextLabel");
-			local RealTextbox = Instance.new("TextBox");
-			local UICorner = Instance.new("UICorner");
-			local TextBoxIcon = Instance.new("ImageLabel");
-			Textbox.Name = "Textbox";
-			Textbox.Parent = MainFramePage;
-			Textbox.BackgroundColor3 = _G.Primary;
-			Textbox.BackgroundTransparency = 0.8;
-			Textbox.Size = UDim2.new(1, 0, 0, 35);
-			TextboxCorner.CornerRadius = UDim.new(0, 5);
-			TextboxCorner.Name = "TextboxCorner";
-			TextboxCorner.Parent = Textbox;
-			TextboxLabel.Name = "TextboxLabel";
-			TextboxLabel.Parent = Textbox;
-			TextboxLabel.BackgroundColor3 = _G.Primary;
-			TextboxLabel.BackgroundTransparency = 1;
-			TextboxLabel.Position = UDim2.new(0, 15, 0.5, 0);
-			TextboxLabel.Text = text;
-			TextboxLabel.Size = UDim2.new(1, 0, 0, 35);
-			TextboxLabel.Font = Enum.Font.Nunito;
-			TextboxLabel.AnchorPoint = Vector2.new(0, 0.5);
-			TextboxLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-			TextboxLabel.TextSize = 15;
-			TextboxLabel.TextTransparency = 0;
-			TextboxLabel.TextXAlignment = Enum.TextXAlignment.Left;
-			RealTextbox.Name = "RealTextbox";
-			RealTextbox.Parent = Textbox;
-			RealTextbox.BackgroundColor3 = Color3.fromRGB(200, 200, 200);
-			RealTextbox.BackgroundTransparency = 0.8;
-			RealTextbox.Position = UDim2.new(1, -5, 0.5, 0);
-			RealTextbox.AnchorPoint = Vector2.new(1, 0.5);
-			RealTextbox.Size = UDim2.new(0, 80, 0, 25);
-			RealTextbox.Font = Enum.Font.Gotham;
-			RealTextbox.Text = "";
-			RealTextbox.TextColor3 = Color3.fromRGB(225, 225, 225);
-			RealTextbox.TextSize = 11;
-			RealTextbox.TextTransparency = 0;
-			RealTextbox.ClipsDescendants = true;
-			RealTextbox.FocusLost:Connect(function()
-				callback(RealTextbox.Text);
-			end);
-			UICorner.CornerRadius = UDim.new(0, 5);
-			UICorner.Parent = RealTextbox;
-		end;
-		function main:Label(text)
-			local Frame = Instance.new("Frame");
-			local Label = Instance.new("TextLabel");
-			local PaddingLabel = Instance.new("UIPadding");
-			local labelfunc = {};
-			Frame.Name = "Frame";
-			Frame.Parent = MainFramePage;
-			Frame.BackgroundColor3 = _G.Primary;
-			Frame.BackgroundTransparency = 1;
-			Frame.Size = UDim2.new(1, 0, 0, 30);
-			Label.Name = "Label";
-			Label.Parent = Frame;
-			Label.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			Label.BackgroundTransparency = 1;
-			Label.Size = UDim2.new(1, -30, 0, 30);
-			Label.Font = Enum.Font.Nunito;
-			Label.Position = UDim2.new(0, 30, 0.5, 0);
-			Label.AnchorPoint = Vector2.new(0, 0.5);
-			Label.TextColor3 = Color3.fromRGB(225, 225, 225);
-			Label.TextSize = 15;
-			Label.Text = text;
-			Label.TextXAlignment = Enum.TextXAlignment.Left;
-			local ImageLabel = Instance.new("ImageLabel");
-			ImageLabel.Name = "ImageLabel";
-			ImageLabel.Parent = Frame;
-			ImageLabel.BackgroundColor3 = Color3.fromRGB(200, 200, 200);
-			ImageLabel.BackgroundTransparency = 1;
-			ImageLabel.ImageTransparency = 0;
-			ImageLabel.Position = UDim2.new(0, 10, 0.5, 0);
-			ImageLabel.Size = UDim2.new(0, 14, 0, 14);
-			ImageLabel.AnchorPoint = Vector2.new(0, 0.5);
-			ImageLabel.Image = "rbxassetid://10723415903";
-			ImageLabel.ImageColor3 = Color3.fromRGB(200, 200, 200);
-			function labelfunc:Set(newtext)
-				Label.Text = newtext;
-			end;
-			return labelfunc;
-		end;
-		function main:Seperator(text)
-			local Seperator = Instance.new("Frame");
-			local Sep2 = Instance.new("TextLabel");
-			
-			Seperator.Name = "Seperator";
-			Seperator.Parent = MainFramePage;
-			Seperator.BackgroundColor3 = _G.Primary;
-			Seperator.BackgroundTransparency = 1;
-			Seperator.Size = UDim2.new(1, 0, 0, 36);
-			
-			local RingContainer = Instance.new("Frame")
-			RingContainer.Parent = Seperator
-			RingContainer.Size = UDim2.new(1,0,1,0)
-			RingContainer.BackgroundTransparency = 1
-			
-			for i = 1, 3 do
-				local Ring = Instance.new("ImageLabel")
-				Ring.Parent = RingContainer
-				Ring.Size = UDim2.new(0, 20, 0, 20)
-				Ring.AnchorPoint = Vector2.new(0.5, 0.5)
-				Ring.Position = UDim2.new(0.5, (i - 2) * 25, 0.5, 0) -- Centra los 3 anillos
-				Ring.BackgroundTransparency = 1
-				Ring.Image = "rbxassetid://5915348391" -- Imagen de anillo
-				Ring.ImageColor3 = Color3.fromRGB(255,255,255)
-				ApplyStyledGradientBorder(Ring)
-				
-				-- Animación de rotación infinita
-				local tweenInfo = TweenInfo.new(2 + (i*0.5), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1)
-				local tween = TweenService:Create(Ring, tweenInfo, {Rotation = 360})
-				tween:Play()
-			end
-			
-			Sep2.Name = "Sep2";
-			Sep2.Parent = Seperator;
-			Sep2.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			Sep2.BackgroundTransparency = 1;
-			Sep2.AnchorPoint = Vector2.new(0.5, 0.5);
-			Sep2.Position = UDim2.new(0.5, 0, 0.5, 0);
-			Sep2.Size = UDim2.new(1, 0, 0, 36);
-			Sep2.Font = Enum.Font.GothamBold;
-			Sep2.Text = text;
-			Sep2.TextColor3 = Color3.fromRGB(255, 255, 255);
-			Sep2.TextSize = 14;
-		end;
-		function main:Line()
-			local Linee = Instance.new("Frame");
-			local Line = Instance.new("Frame");
-			local UIGradient = Instance.new("UIGradient");
-			Linee.Name = "Linee";
-			Linee.Parent = MainFramePage;
-			Linee.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-			Linee.BackgroundTransparency = 1;
-			Linee.Position = UDim2.new(0, 0, 0.119999997, 0);
-			Linee.Size = UDim2.new(1, 0, 0, 20);
-			Line.Name = "Line";
-			Line.Parent = Linee;
-			Line.BackgroundColor3 = Color3.new(125, 125, 125);
-			Line.BorderSizePixel = 0;
-			Line.Position = UDim2.new(0, 0, 0, 10);
-			Line.Size = UDim2.new(1, 0, 0, 1);
-			UIGradient.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, _G.Dark),
-				ColorSequenceKeypoint.new(0.4, _G.Primary),
-				ColorSequenceKeypoint.new(0.5, _G.Primary),
-				ColorSequenceKeypoint.new(0.6, _G.Primary),
-				ColorSequenceKeypoint.new(1, _G.Dark)
-			});
-			UIGradient.Parent = Line;
-		end;
+		
 		return main;
 	end;
 	return uitab;
 end;
-
--- Lógica final de ejecución y precarga
-task.spawn(function()
-    task.wait(0.1) -- Pequeña espera para que todo se inicialice
-    local guis_a_mover = {"xSOLITOx HUB", "NotificationFrame", "ScreenGui"}
-    local lugar_vip = get_top_gui()
-    local core_gui = game:GetService("CoreGui")
-
-    for _, nombre_gui in ipairs(guis_a_mover) do
-        pcall(function()
-            local gui_encontrada = core_gui:FindFirstChild(nombre_gui)
-            if gui_encontrada and gui_encontrada.Parent ~= lugar_vip then
-                gui_encontrada.Parent = lugar_vip
-            end
-        end)
-    end
-end)
 
 return Update;
